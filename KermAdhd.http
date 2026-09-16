@@ -1,0 +1,6 @@
+@KermAdhd_HostAddress = http://localhost:5260
+
+GET {{KermAdhd_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

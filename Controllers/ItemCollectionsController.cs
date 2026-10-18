@@ -6,9 +6,9 @@ namespace HouseholdManager.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ItemCollectionController : ControllerBase
+    public class ItemCollectionsController : ControllerBase
     {
-        public ItemCollectionController(IItemCollectionService itemCollectionService) {
+        public ItemCollectionsController(IItemCollectionService itemCollectionService) {
             _itemCollectionService = itemCollectionService;
         }
 
@@ -31,7 +31,6 @@ namespace HouseholdManager.Controllers
         [HttpPost]
         public IActionResult Create([FromBody]CreateItemCollectionModel model)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
             var itemCollection = _itemCollectionService.CreateItemCollection(model);
             return Ok(itemCollection);
         }
@@ -39,7 +38,6 @@ namespace HouseholdManager.Controllers
         [HttpPost("{itemCollectionId}")]
         public IActionResult Update(int itemCollectionId, [FromBody]UpdateItemCollectionModel model)
         {
-            if(!ModelState.IsValid) return BadRequest(ModelState);
             if (_itemCollectionService.GetItemCollection(itemCollectionId) is not { } itemCollection) return NotFound();
             _itemCollectionService.UpdateItemCollection(itemCollectionId, model);
             return Ok(itemCollection);

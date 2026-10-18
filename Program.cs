@@ -1,10 +1,10 @@
 
-using KermAdhd.Database;
-using KermAdhd.Database.DataModels;
-using KermAdhd.Services;
+using HouseholdManager.Database;
+using HouseholdManager.Database.DataModels;
+using HouseholdManager.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace KermAdhd
+namespace HouseholdManager
 {
     public class Program
     {
@@ -17,27 +17,39 @@ namespace KermAdhd
             builder.Services.AddControllers();
             // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
             builder.Services.AddOpenApi();
-            builder.Services.AddDbContext<AdhdContext>(options =>
+            builder.Services.AddDbContext<HouseholdContext>(options =>
             {
                 options.UseSeeding((x, v) =>
                 {
-                    x.Set<Reminder>().Add(new Reminder { Name = "Test", IsCompleted = false });
+                    var newUser = new User { UserName = "Kristine" };
+                    x.Set<ItemCollection>().Add(new ItemCollection { Name = "Test collection", Owner = newUser });
+                    x.SaveChanges();
                 });
 
-                options.UseInMemoryDatabase("adhdreminder");
+                options.UseInMemoryDatabase("household");
             });
 
-            builder.Services.AddScoped<IReminderService, ReminderService>();
+            builder.Services.AddScoped<IItemCollectionService, ItemCollectionService>();
+            builder.Services.AddScoped<IItemInstanceService, ItemInstanceService>();
+            builder.Services.AddScoped<IRecurrenceRuleService, RecurrenceRuleService>();
+            builder.Services.AddScoped<IItemService, ItemService>();
+            builder.Services.AddScoped<IUserService, UserService>();
 
             var app = builder.Build();
 
-            // Configure the HTTP request pipeline.
-            if (app.Environment.IsDevelopment())
+            using (var scope = app.Services.CreateScope())
             {
-                app.MapOpenApi();
+                var context = scope.ServiceProvider.GetRequiredService<HouseholdContext>();
+                context.Database.EnsureCreated();
             }
 
-            app.UseHttpsRedirection();
+                // Configure the HTTP request pipeline.
+                if (app.Environment.IsDevelopment())
+                {
+                    app.MapOpenApi();
+                }
+
+            //app.UseHttpsRedirection();
 
             app.UseAuthorization();
 

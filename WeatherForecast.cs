@@ -1,4 +1,4 @@
-namespace KermAdhd
+namespace HouseholdManager
 {
     public class WeatherForecast
     {

@@ -6,9 +6,9 @@ namespace HouseholdManager.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ItemCollectionsController : ControllerBase
+    public class ItemCollectionController : ControllerBase
     {
-        public ItemCollectionsController(IItemCollectionService itemCollectionService) {
+        public ItemCollectionController(IItemCollectionService itemCollectionService) {
             _itemCollectionService = itemCollectionService;
         }
 

@@ -46,8 +46,7 @@ namespace HouseholdManager.Controllers
         [HttpDelete("{itemCollectionId}")]
         public IActionResult Delete(int itemCollectionId)
         {
-            if (_itemCollectionService.GetItemCollection(itemCollectionId) is not { } itemCollection) return NotFound();
-            _itemCollectionService.DeleteItemCollection(itemCollectionId);
+            if (!_itemCollectionService.DeleteItemCollection(itemCollectionId)) return NotFound();
             return Ok();
         }
     }

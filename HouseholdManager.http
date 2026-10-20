@@ -1,0 +1,11 @@
+POST http://localhost:5260/api/ItemCollections
+Content-Type: application/json
+
+{
+  "name": "Aa",
+  "ownerId": 1
+}
+
+###
+
+DELETE http://localhost:5260/api/ItemCollections/2

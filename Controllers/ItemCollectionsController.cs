@@ -31,8 +31,8 @@ namespace HouseholdManager.Controllers
         [HttpPost]
         public IActionResult Create([FromBody]CreateItemCollectionModel model)
         {
-            var itemCollection = _itemCollectionService.CreateItemCollection(model);
-            return Ok(itemCollection);
+            var newItemCollection = _itemCollectionService.CreateItemCollection(model);
+            return Ok(newItemCollection);
         }
 
         [HttpPost("{itemCollectionId}")]

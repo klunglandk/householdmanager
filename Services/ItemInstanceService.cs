@@ -1,5 +1,6 @@
 ﻿using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
 namespace HouseholdManager.Services
@@ -32,12 +33,18 @@ namespace HouseholdManager.Services
 
         public ItemInstance? GetItemInstance(int itemInstanceId)
         {
-            return _context.ItemInstances.FirstOrDefault(instance => instance.Id == itemInstanceId);
+            return _context.ItemInstances
+                .Include(instance => instance.Item)
+                .ThenInclude(item => item.RecurrenceRule)
+                .FirstOrDefault(instance => instance.Id == itemInstanceId);
         }
 
         public List<ItemInstance> GetAllItemInstances(int itemCollectionId)
         {
-            return _context.ItemInstances.Where(instance => instance.ItemCollectionId == itemCollectionId).ToList();
+            return _context.ItemInstances
+                .Include(instance => instance.Item)
+                .ThenInclude(item => item.RecurrenceRule)
+                .Where(instance => instance.ItemCollectionId == itemCollectionId).ToList();
         }
 
         public ItemInstance CreateItemInstance(CreateItemInstanceModel model)

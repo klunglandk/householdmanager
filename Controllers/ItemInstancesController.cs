@@ -49,5 +49,12 @@ namespace HouseholdManager.Controllers
             _itemInstanceService.ClearDoneDate(itemInstanceId);
             return Ok(itemInstance);
         }
+
+        [HttpDelete("{itemInstanceId}")]
+        public IActionResult Delete(int itemInstanceId)
+        {
+            if (!_itemInstanceService.DeleteItemInstance(itemInstanceId)) return NotFound();
+            return Ok();
+        }
     }
 }

@@ -42,6 +42,12 @@ namespace HouseholdManager.Controllers
             return Ok(itemInstance);
         }
 
-
+        [HttpPost("{itemInstanceId}/clear-done-date")]
+        public IActionResult ClearDoneDate(int itemInstanceId)
+        {
+            if (_itemInstanceService.GetItemInstance(itemInstanceId) is not { } itemInstance) return NotFound();
+            _itemInstanceService.ClearDoneDate(itemInstanceId);
+            return Ok(itemInstance);
+        }
     }
 }

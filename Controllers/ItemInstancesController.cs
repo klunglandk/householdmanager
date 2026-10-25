@@ -1,4 +1,5 @@
-﻿using HouseholdManager.Services;
+﻿using HouseholdManager.Dtos;
+using HouseholdManager.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
@@ -18,20 +19,24 @@ namespace HouseholdManager.Controllers
         public IActionResult Get(int itemInstanceId)
         {
             if (_itemInstanceService.GetItemInstance(itemInstanceId) is not { } itemInstance) return NotFound();
-            return Ok(itemInstance);
+            var result = ItemInstanceDto.Map(itemInstance);
+            return Ok(result);
         }
 
         [HttpGet]
         public IActionResult GetAll(int itemCollectionId)
         {
-            return Ok(_itemInstanceService.GetAllItemInstances(itemCollectionId));
+            if (_itemInstanceService.GetAllItemInstances(itemCollectionId) is not { } itemInstances) return NotFound();
+            var result = ItemInstanceDto.MapCollection(itemInstances);
+            return Ok(result);
         }
 
         [HttpPost]
         public IActionResult Create([FromBody] CreateItemInstanceModel model)
         {
             var newItemInstance = _itemInstanceService.CreateItemInstance(model);
-            return Ok(newItemInstance);
+            var result = ItemInstanceDto.Map(newItemInstance);
+            return Ok(result);
         }
 
         [HttpPost("{itemInstanceId}/mark-as-done")]
@@ -39,7 +44,7 @@ namespace HouseholdManager.Controllers
         {
             if (_itemInstanceService.GetItemInstance(itemInstanceId) is not { } itemInstance) return NotFound();
             _itemInstanceService.MarkAsDone(itemInstanceId);
-            return Ok(itemInstance);
+            return Ok(itemInstance.Map());
         }
 
         [HttpPost("{itemInstanceId}/clear-done-date")]
@@ -47,7 +52,7 @@ namespace HouseholdManager.Controllers
         {
             if (_itemInstanceService.GetItemInstance(itemInstanceId) is not { } itemInstance) return NotFound();
             _itemInstanceService.ClearDoneDate(itemInstanceId);
-            return Ok(itemInstance);
+            return Ok(itemInstance.Map());
         }
 
         [HttpDelete("{itemInstanceId}")]

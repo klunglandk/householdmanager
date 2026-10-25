@@ -16,5 +16,27 @@ namespace HouseholdManager.Dtos
         public FrequencyType? FrequencyType { get; set; }
 
         public int? Frequency {  get; set; }
+
+        public static ItemInstanceDto Map(ItemInstance itemInstance)
+        {
+            var result = new ItemInstanceDto()
+            {
+                Id = itemInstance.Id,
+                PeriodStartDate = itemInstance.PeriodStartDate,
+                DoneDate = itemInstance.DoneDate,
+                ItemName = itemInstance.Item.Name,
+                FrequencyType = itemInstance.Item.RecurrenceRule?.FrequencyType,
+                Frequency = itemInstance.Item.RecurrenceRule?.Frequency
+            };
+            return result;
+        }
+
+        public static IEnumerable<ItemInstanceDto> MapCollection(IEnumerable<ItemInstance> itemInstance)
+        {
+            foreach(var item in itemInstance)
+            {
+                yield return Map(item);
+            }
+        }
     }
 }

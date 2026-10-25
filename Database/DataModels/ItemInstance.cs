@@ -1,4 +1,6 @@
-﻿namespace HouseholdManager.Database.DataModels
+﻿using HouseholdManager.Dtos;
+
+namespace HouseholdManager.Database.DataModels
 {
     public class ItemInstance
     {
@@ -16,5 +18,10 @@
         public ItemCollection ItemCollection { get; set; } = default!;
 
         public int ItemCollectionId { get; set; }
+
+        public ItemInstanceDto Map()
+        {
+            return ItemInstanceDto.Map(this);
+        }
     }
 }

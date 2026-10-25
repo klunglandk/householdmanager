@@ -19,6 +19,15 @@ Content-Type: application/json
   "itemCollectionId": 1,
   "name": "Melk",
   "periodStartDate": "2026-10-19T00:00:00+02:00"
+} 
+
+###
+
+POST http://localhost:5260/api/Item
+Content-Type: application/json
+
+{
+  "itemId": 1,
 }
 
 ###
@@ -27,7 +36,7 @@ POST http://localhost:5260/api/ItemInstances
 Content-Type: application/json
 
 {
-  "itemId": 999,
+  "itemId": 1,
   "itemCollectionId": 1,
   "periodStartDate": "2026-10-19T00:00:00+02:00"
 }

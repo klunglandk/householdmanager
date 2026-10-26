@@ -11,7 +11,7 @@ namespace HouseholdManager.Services
 
         Item CreateItem(CreateItemModel model);
 
-        void UpdateItem(int itemId, UpdateItemModel model);
+        Item? UpdateItem(int itemId, UpdateItemModel model);
 
         bool DeleteRecurrenceRule(int itemId);
 
@@ -43,9 +43,9 @@ namespace HouseholdManager.Services
 
             return result.Entity;
         }
-        public void UpdateItem(int itemId, UpdateItemModel model)
+        public Item? UpdateItem(int itemId, UpdateItemModel model)
         {
-            var item = GetItem(itemId) ?? throw new InvalidOperationException("Item not found");
+            if (GetItem(itemId) is not { } item) return null;
             if (model.Name is { } name) item.Name = name;
             if (model.FrequencyType is { } frequencyType)
             {
@@ -59,6 +59,7 @@ namespace HouseholdManager.Services
                 }
             }
             _context.SaveChanges();
+            return item;
         }
 
         public bool DeleteRecurrenceRule(int itemId)

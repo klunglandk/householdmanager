@@ -4,27 +4,27 @@ namespace HouseholdManager.Services
 {
     public interface IRecurrenceRuleService
     {
-        void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int frequency = 1);
+        void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency);
 
-        void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int frequency = 1);
+        void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency);
     }
     public class RecurrenceRuleService : IRecurrenceRuleService
     {
-        public void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int frequency = 1)
+        public void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency)
         {
             if (frequencyType is { } type)
             {
-                var newRule = new RecurrenceRule { FrequencyType = type, Frequency = frequency };
+                var newRule = new RecurrenceRule { FrequencyType = type, Frequency = frequency ?? 1 };
                 item.RecurrenceRule = newRule;
             }
         }
 
-        public void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int frequency = 1)
+        public void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency)
         {
             if (frequencyType is { } type)
             {
                 rule.FrequencyType = type;
-                rule.Frequency = frequency;
+                rule.Frequency = frequency ?? rule.Frequency;
             }
         }
     }

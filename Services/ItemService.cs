@@ -82,22 +82,31 @@ namespace HouseholdManager.Services
         }
     }
 
-    public class CreateItemModel
+    public class CreateItemModel : RecurrenceInputModel
     {
         [Required, MinLength(2), MaxLength(128)]
         public required string Name { get; set; }
 
-        public FrequencyType? FrequencyType { get; set; }
-
-        public int Frequency { get; set; } = 1;
     }
 
-    public class UpdateItemModel
+    public class UpdateItemModel : RecurrenceInputModel
     {
         public string? Name { get; set; }
 
+    }
+
+    public abstract class RecurrenceInputModel : IValidatableObject
+    {
         public FrequencyType? FrequencyType { get; set; }
 
-        public int Frequency { get; set; } = 1;
+        public int? Frequency { get; set; }
+    
+        public IEnumerable<ValidationResult> Validate(ValidationContext context)
+        {
+            if (Frequency is not null && FrequencyType is null)
+            {
+                yield return new ValidationResult("Frequency requires FrequencyType", [nameof(Frequency)]);
+            }
+        }
     }
 }

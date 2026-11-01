@@ -15,10 +15,6 @@ namespace HouseholdManager.Database.DataModels
         public Item Item { get; set; } = default!;
         public int ItemId { get; set; }
 
-        public ItemCollection ItemCollection { get; set; } = default!;
-
-        public int ItemCollectionId { get; set; }
-
         public ItemInstanceDto Map()
         {
             return ItemInstanceDto.Map(this);

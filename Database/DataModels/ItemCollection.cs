@@ -17,7 +17,7 @@
 
         public ItemCollectionStatus Status { get; set; }
 
-        public List<ItemInstance> ItemInstances { get; set; } = [];
+        public List<Item> Items { get; set; } = [];
 
     }
 }

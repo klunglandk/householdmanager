@@ -13,6 +13,8 @@
 
         public int Frequency { get; set; }
 
+        public int Interval { get; set; }
+
         public Item Item { get; set; } = default!;
     }
 }

@@ -47,7 +47,7 @@ namespace HouseholdManager.Services
             return _context.ItemInstances
                 .Include(instance => instance.Item)
                 .ThenInclude(item => item.RecurrenceRule)
-                .Where(instance => instance.ItemCollectionId == itemCollectionId).ToList();
+                .Where(instance => instance.Item.ItemCollectionId == itemCollectionId).ToList();
         }
 
         public ItemInstance? CreateItemInstance(CreateItemInstanceModel model)
@@ -59,7 +59,6 @@ namespace HouseholdManager.Services
             {
                 Item = item,
                 PeriodStartDate = model.PeriodStartDate,
-                ItemCollectionId = model.ItemCollectionId
             };
 
             return SaveNewInstance(newInstance);
@@ -67,14 +66,13 @@ namespace HouseholdManager.Services
 
         public ItemInstance CreateItemInstanceWithNewItem(CreateItemInstanceWithNewItemModel model)
         {
-            var itemModel = new CreateItemModel { Name = model.Name, FrequencyType = model.FrequencyType, Frequency = model.Frequency };
+            var itemModel = new CreateItemModel { Name = model.Name, ItemCollectionId = model.ItemCollectionId, FrequencyType = model.FrequencyType, Frequency = model.Frequency, Interval = model.Interval };
             var newItem = _itemService.CreateItem(itemModel);
 
             var newInstance = new ItemInstance
             {
                 PeriodStartDate = model.PeriodStartDate,
                 Item = newItem,
-                ItemCollectionId = model.ItemCollectionId
             };
 
             return SaveNewInstance(newInstance);
@@ -126,8 +124,6 @@ namespace HouseholdManager.Services
     public class CreateItemInstanceModel
     {
         public required int ItemId { get; set; }
-
-        public required int ItemCollectionId { get; set; }
 
         public required DateTimeOffset PeriodStartDate { get; set; }
     }

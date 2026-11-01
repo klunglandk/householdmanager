@@ -19,6 +19,8 @@ namespace HouseholdManager.Dtos
 
         public int? Frequency {  get; set; }
 
+        public int? Interval { get; set; }
+
         public static ItemInstanceDto Map(ItemInstance itemInstance)
         {
             var result = new ItemInstanceDto()
@@ -29,7 +31,8 @@ namespace HouseholdManager.Dtos
                 ItemId = itemInstance.ItemId,
                 ItemName = itemInstance.Item.Name,
                 FrequencyType = itemInstance.Item.RecurrenceRule?.FrequencyType,
-                Frequency = itemInstance.Item.RecurrenceRule?.Frequency
+                Frequency = itemInstance.Item.RecurrenceRule?.Frequency,
+                Interval = itemInstance.Item.RecurrenceRule?.Interval
             };
             return result;
         }

@@ -40,18 +40,16 @@ namespace HouseholdManager.Services
         public List<Item> GetAllItems(int itemCollectionId)
         {
             
-            return _context.ItemInstances
-                .Where(instance => instance.ItemCollectionId == itemCollectionId)
-                .Select(instance => instance.Item)
+            return _context.Items
+                .Where(item => item.ItemCollectionId == itemCollectionId)
                 .Include(item => item.RecurrenceRule)
-                .Distinct()
                 .ToList();
         }
 
         public Item CreateItem(CreateItemModel model)
         {
-            var newItem = new Item { Name = model.Name };
-            _recurrenceRuleService.CreateRecurrenceRule(newItem, model.FrequencyType, model.Frequency);
+            var newItem = new Item { Name = model.Name, ItemCollectionId = model.ItemCollectionId };
+            _recurrenceRuleService.CreateRecurrenceRule(newItem, model.FrequencyType, model.Frequency, model.Interval);
             var result = _context.Items.Add(newItem);
             _context.SaveChanges();
 
@@ -65,11 +63,11 @@ namespace HouseholdManager.Services
             {
                 if (item.RecurrenceRule is { } recurrenceRule)
                 {
-                    _recurrenceRuleService.UpdateRecurrenceRule(recurrenceRule, frequencyType, model.Frequency);
+                    _recurrenceRuleService.UpdateRecurrenceRule(recurrenceRule, frequencyType, model.Frequency, model.Interval);
                 }
                 else
                 {
-                    _recurrenceRuleService.CreateRecurrenceRule(item, frequencyType, model.Frequency);
+                    _recurrenceRuleService.CreateRecurrenceRule(item, frequencyType, model.Frequency, model.Interval);
                 }
             }
             _context.SaveChanges();
@@ -83,15 +81,22 @@ namespace HouseholdManager.Services
             var nameChanged = model.Name is { } name && name != item.Name;
             var frequencyTypeChanged = model.FrequencyType is { } frequencyType && frequencyType != item.RecurrenceRule?.FrequencyType;
             var frequencyChanged = model.Frequency is { } frequency && frequency != item.RecurrenceRule?.Frequency;
+            var intervalChanged = model.Interval is { } interval && interval != item.RecurrenceRule?.Interval;
 
-            if (!nameChanged && !frequencyTypeChanged && !frequencyChanged) return item;
+            if (!nameChanged && !frequencyTypeChanged && !frequencyChanged && !intervalChanged) return item;
 
             var newItem = new Item
             {
                 Name = model.Name ?? item.Name,
+                ItemCollectionId = item.ItemCollectionId,
             };
 
-            _recurrenceRuleService.CreateRecurrenceRule(newItem, model.FrequencyType ?? item.RecurrenceRule?.FrequencyType, model.Frequency ?? item.RecurrenceRule?.Frequency);
+            _recurrenceRuleService.CreateRecurrenceRule(
+                newItem, 
+                model.FrequencyType ?? item.RecurrenceRule?.FrequencyType, 
+                model.Frequency ?? item.RecurrenceRule?.Frequency, 
+                model.Interval ?? item.RecurrenceRule?.Interval
+                );
 
             if (item.RecurrenceRule is { } rule) _recurrenceRuleService.DeleteRecurrenceRule(rule);
 
@@ -114,6 +119,8 @@ namespace HouseholdManager.Services
     {
         [Required, MinLength(2), MaxLength(128)]
         public required string Name { get; set; }
+
+        public required int ItemCollectionId { get; set; }
 
     }
 

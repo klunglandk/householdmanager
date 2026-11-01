@@ -41,6 +41,7 @@ namespace HouseholdManager.Database
                 e.Property(p => p.Id).ValueGeneratedOnAdd();
                 e.Property(p => p.Name).HasMaxLength(128);
                 e.HasOne(p => p.RecurrenceRule).WithOne(p => p.Item).HasForeignKey<Item>(p => p.RecurrenceRuleId);
+                e.HasOne(p => p.ItemCollection).WithMany(p => p.Items).HasForeignKey(p => p.ItemCollectionId);
             });
 
             modelBuilder.Entity<RecurrenceRule>(e =>
@@ -54,7 +55,6 @@ namespace HouseholdManager.Database
                 e.HasKey(p => p.Id);
                 e.Property(p => p.Id).ValueGeneratedOnAdd();
                 e.HasOne(p => p.Item).WithMany(p => p.ItemInstances).HasForeignKey(p => p.ItemId);
-                e.HasOne(p => p.ItemCollection).WithMany(p => p.ItemInstances).HasForeignKey(p => p.ItemCollectionId);
             });
         }
     }

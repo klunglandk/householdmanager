@@ -10,6 +10,10 @@
 
         public int? RecurrenceRuleId { get; set; }
 
+        public ItemCollection ItemCollection { get; set; } = default!;
+
+        public int ItemCollectionId { get; set; }
+
         public List<ItemInstance> ItemInstances { get; set; } = []; 
 
     }

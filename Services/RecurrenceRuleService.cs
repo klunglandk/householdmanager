@@ -6,9 +6,9 @@ namespace HouseholdManager.Services
 {
     public interface IRecurrenceRuleService
     {
-        void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency);
+        void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency, int? interval);
 
-        void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency);
+        void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency, int? interval);
 
         void DeleteRecurrenceRule(RecurrenceRule rule);
     }
@@ -21,21 +21,22 @@ namespace HouseholdManager.Services
 
         private readonly HouseholdContext _context;
 
-        public void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency)
+        public void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency, int? interval)
         {
             if (frequencyType is { } type)
             {
-                var newRule = new RecurrenceRule { FrequencyType = type, Frequency = frequency ?? 1 };
+                var newRule = new RecurrenceRule { FrequencyType = type, Frequency = frequency ?? 1, Interval = interval ?? 1 };
                 item.RecurrenceRule = newRule;
             }
         }
 
-        public void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency)
+        public void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency, int? interval)
         {
             if (frequencyType is { } type)
             {
                 rule.FrequencyType = type;
                 rule.Frequency = frequency ?? rule.Frequency;
+                rule.Interval = interval ?? rule.Interval;
             }
         }
 

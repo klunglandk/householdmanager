@@ -23,5 +23,13 @@ namespace HouseholdManager.Dtos
             };
             return result;
         }
+
+        public static IEnumerable<ItemDto> MapItems(IEnumerable<Item> items)
+        {
+            foreach (var item in items)
+            {
+                yield return Map(item);
+            }
+        }
     }
 }

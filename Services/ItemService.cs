@@ -1,5 +1,6 @@
 ﻿using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Models;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
@@ -9,11 +10,13 @@ namespace HouseholdManager.Services
     {
         Item? GetItem(int itemId);
 
+        List<Item> GetAllItems(int itemCollectionId);
+
         Item CreateItem(CreateItemModel model);
 
         Item? UpdateItem(int itemId, UpdateItemModel model);
 
-        bool DeleteRecurrenceRule(int itemId);
+        Item? UpdateFutureItem(int itemId, UpdateItemModel model);
 
         bool DeleteItem(int itemId);
     }
@@ -32,6 +35,17 @@ namespace HouseholdManager.Services
             return _context.Items
                 .Include(item => item.RecurrenceRule)
                 .FirstOrDefault(item => item.Id == itemId);
+        }
+
+        public List<Item> GetAllItems(int itemCollectionId)
+        {
+            
+            return _context.ItemInstances
+                .Where(instance => instance.ItemCollectionId == itemCollectionId)
+                .Select(instance => instance.Item)
+                .Include(item => item.RecurrenceRule)
+                .Distinct()
+                .ToList();
         }
 
         public Item CreateItem(CreateItemModel model)
@@ -62,20 +76,34 @@ namespace HouseholdManager.Services
             return item;
         }
 
-        public bool DeleteRecurrenceRule(int itemId)
+        public Item? UpdateFutureItem(int itemId, UpdateItemModel model)
         {
-            if (GetItem(itemId) is not { } item) return false;
-            if (item.RecurrenceRule is not { } currentRule) return false;
+            if (GetItem(itemId) is not { } item) return null;
 
-            _context.RecurrenceRules.Remove(currentRule);
+            var nameChanged = model.Name is { } name && name != item.Name;
+            var frequencyTypeChanged = model.FrequencyType is { } frequencyType && frequencyType != item.RecurrenceRule?.FrequencyType;
+            var frequencyChanged = model.Frequency is { } frequency && frequency != item.RecurrenceRule?.Frequency;
+
+            if (!nameChanged && !frequencyTypeChanged && !frequencyChanged) return item;
+
+            var newItem = new Item
+            {
+                Name = model.Name ?? item.Name,
+            };
+
+            _recurrenceRuleService.CreateRecurrenceRule(newItem, model.FrequencyType ?? item.RecurrenceRule?.FrequencyType, model.Frequency ?? item.RecurrenceRule?.Frequency);
+
+            if (item.RecurrenceRule is { } rule) _recurrenceRuleService.DeleteRecurrenceRule(rule);
+
+            _context.Items.Add(newItem);
             _context.SaveChanges();
-            return true;
+            return newItem;
         }
 
         public bool DeleteItem(int itemId)
         {
             if (GetItem(itemId) is not { } item) return false;
-            if (item.RecurrenceRule is { } rule) _context.RecurrenceRules.Remove(rule);
+            if (item.RecurrenceRule is { } rule) _recurrenceRuleService.DeleteRecurrenceRule(rule);
             _context.Items.Remove(item);
             _context.SaveChanges();
             return true;
@@ -91,22 +119,8 @@ namespace HouseholdManager.Services
 
     public class UpdateItemModel : RecurrenceInputModel
     {
+        [MinLength(2), MaxLength(128)]
         public string? Name { get; set; }
 
-    }
-
-    public abstract class RecurrenceInputModel : IValidatableObject
-    {
-        public FrequencyType? FrequencyType { get; set; }
-
-        public int? Frequency { get; set; }
-    
-        public IEnumerable<ValidationResult> Validate(ValidationContext context)
-        {
-            if (Frequency is not null && FrequencyType is null)
-            {
-                yield return new ValidationResult("Frequency requires FrequencyType", [nameof(Frequency)]);
-            }
-        }
     }
 }

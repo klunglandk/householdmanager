@@ -12,7 +12,7 @@ namespace HouseholdManager.Dtos
 
         public ItemCollectionStatus Status { get; set; }
 
-        public ItemCollectionDto Map(ItemCollection itemCollection)
+        public static ItemCollectionDto Map(ItemCollection itemCollection)
         {
             var result = new ItemCollectionDto
             {
@@ -22,6 +22,14 @@ namespace HouseholdManager.Dtos
                 Status = itemCollection.Status
             };
             return result;
+        }
+
+        public static IEnumerable<ItemCollectionDto> MapCollection(IEnumerable<ItemCollection> itemCollections)
+        {
+            foreach (var collection in itemCollections)
+            {
+                yield return Map(collection);
+            }
         }
     }
 }

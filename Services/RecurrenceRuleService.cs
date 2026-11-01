@@ -1,4 +1,6 @@
-﻿using HouseholdManager.Database.DataModels;
+﻿using HouseholdManager.Database;
+using HouseholdManager.Database.DataModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace HouseholdManager.Services
 {
@@ -7,9 +9,18 @@ namespace HouseholdManager.Services
         void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency);
 
         void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency);
+
+        void DeleteRecurrenceRule(RecurrenceRule rule);
     }
     public class RecurrenceRuleService : IRecurrenceRuleService
     {
+        public RecurrenceRuleService(HouseholdContext context)
+        {
+            _context = context;
+        }
+
+        private readonly HouseholdContext _context;
+
         public void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency)
         {
             if (frequencyType is { } type)
@@ -26,6 +37,11 @@ namespace HouseholdManager.Services
                 rule.FrequencyType = type;
                 rule.Frequency = frequency ?? rule.Frequency;
             }
+        }
+
+        public void DeleteRecurrenceRule(RecurrenceRule rule)
+        {
+            _context.RecurrenceRules.Remove(rule);
         }
     }
 }

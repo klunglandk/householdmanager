@@ -1,5 +1,5 @@
-﻿using HouseholdManager.Services;
-using Microsoft.AspNetCore.Http;
+﻿using HouseholdManager.Dtos;
+using HouseholdManager.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
@@ -19,28 +19,31 @@ namespace HouseholdManager.Controllers
         public IActionResult Get(int itemCollectionId)
         {
             if(_itemCollectionService.GetItemCollection(itemCollectionId) is not { } itemCollection) return NotFound();
-            return Ok(itemCollection);
+            var result = ItemCollectionDto.Map(itemCollection);
+            return Ok(result);
         }
 
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(_itemCollectionService.GetAllItemCollections());
+            var result = ItemCollectionDto.MapCollection(_itemCollectionService.GetAllItemCollections());
+            return Ok(result);
         }
 
         [HttpPost]
         public IActionResult Create([FromBody]CreateItemCollectionModel model)
         {
             var newItemCollection = _itemCollectionService.CreateItemCollection(model);
-            return Ok(newItemCollection);
+            var result = ItemCollectionDto.Map(newItemCollection);
+            return Ok(result);
         }
 
         [HttpPost("{itemCollectionId}")]
         public IActionResult Update(int itemCollectionId, [FromBody]UpdateItemCollectionModel model)
         {
-            if (_itemCollectionService.GetItemCollection(itemCollectionId) is not { } itemCollection) return NotFound();
-            _itemCollectionService.UpdateItemCollection(itemCollectionId, model);
-            return Ok(itemCollection);
+            if (_itemCollectionService.UpdateItemCollection(itemCollectionId, model) is not { } itemCollection) return NotFound();
+            var result = ItemCollectionDto.Map(itemCollection);
+            return Ok(result);
         }
 
         [HttpDelete("{itemCollectionId}")]

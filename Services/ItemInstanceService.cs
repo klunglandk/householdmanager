@@ -1,5 +1,6 @@
 ﻿using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Models;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
@@ -11,11 +12,13 @@ namespace HouseholdManager.Services
 
         List<ItemInstance> GetAllItemInstances(int itemCollectionId);
 
-        ItemInstance CreateItemInstance(CreateItemInstanceModel model);
+        ItemInstance? CreateItemInstance(CreateItemInstanceModel model);
 
-        void MarkAsDone(int itemInstanceId);
+        ItemInstance CreateItemInstanceWithNewItem(CreateItemInstanceWithNewItemModel model);
 
-        void ClearDoneDate(int itemInstanceId);
+        ItemInstance? MarkAsDone(int itemInstanceId);
+
+        ItemInstance? ClearDoneDate(int itemInstanceId);
 
         bool DeleteItemInstance(int itemInstanceId);
 
@@ -47,42 +50,57 @@ namespace HouseholdManager.Services
                 .Where(instance => instance.ItemCollectionId == itemCollectionId).ToList();
         }
 
-        public ItemInstance CreateItemInstance(CreateItemInstanceModel model)
+        public ItemInstance? CreateItemInstance(CreateItemInstanceModel model)
         {
-            ItemInstance newInstance;
 
-            if (model.ItemId is { } itemId)
+            if (_itemService.GetItem(model.ItemId) is not { } item) return null;
+
+            var newInstance = new ItemInstance
             {
-                var item = _itemService.GetItem(itemId) ?? throw new InvalidOperationException("Item not found");
-                newInstance = new ItemInstance { PeriodStartDate = model.PeriodStartDate, Item = item, ItemCollectionId = model.ItemCollectionId};
-            }
-            else
+                Item = item,
+                PeriodStartDate = model.PeriodStartDate,
+                ItemCollectionId = model.ItemCollectionId
+            };
+
+            return SaveNewInstance(newInstance);
+        }
+
+        public ItemInstance CreateItemInstanceWithNewItem(CreateItemInstanceWithNewItemModel model)
+        {
+            var itemModel = new CreateItemModel { Name = model.Name, FrequencyType = model.FrequencyType, Frequency = model.Frequency };
+            var newItem = _itemService.CreateItem(itemModel);
+
+            var newInstance = new ItemInstance
             {
-                if (model.Name is not { } name) throw new InvalidOperationException("Name is required");
-                var itemModel = new CreateItemModel { Name = name, FrequencyType = model.FrequencyType, Frequency = model.Frequency };
-                var newItem = _itemService.CreateItem(itemModel);
+                PeriodStartDate = model.PeriodStartDate,
+                Item = newItem,
+                ItemCollectionId = model.ItemCollectionId
+            };
 
-                newInstance = new ItemInstance { PeriodStartDate = model.PeriodStartDate, Item = newItem, ItemCollectionId = model.ItemCollectionId };
-            }
+            return SaveNewInstance(newInstance);
+        }
 
-            var result = _context.ItemInstances.Add(newInstance);
+        private ItemInstance SaveNewInstance(ItemInstance instance)
+        {
+            var result = _context.ItemInstances.Add(instance);
             _context.SaveChanges();
             return result.Entity;
         }
 
-        public void MarkAsDone(int itemInstanceId)
+        public ItemInstance? MarkAsDone(int itemInstanceId)
         {
-            var instance = GetItemInstance(itemInstanceId) ?? throw new InvalidOperationException("Item instance not found");
+            if (GetItemInstance(itemInstanceId) is not { } instance) return null;
             instance.DoneDate = DateTimeOffset.UtcNow;
             _context.SaveChanges();
+            return instance;
         }
 
-        public void ClearDoneDate(int itemInstanceId)
+        public ItemInstance? ClearDoneDate(int itemInstanceId)
         {
-            var instance = GetItemInstance(itemInstanceId) ?? throw new InvalidOperationException("Item instance not found");
+            if (GetItemInstance(itemInstanceId) is not { } instance) return null;
             instance.DoneDate = null;
             _context.SaveChanges();
-
+            return instance;
         }
 
         public bool DeleteItemInstance(int itemInstanceId)
@@ -107,16 +125,19 @@ namespace HouseholdManager.Services
 
     public class CreateItemInstanceModel
     {
-        public int? ItemId { get; set; }
+        public required int ItemId { get; set; }
 
         public required int ItemCollectionId { get; set; }
 
-        [MinLength(2), MaxLength(128)]
-        public string? Name { get; set; }
+        public required DateTimeOffset PeriodStartDate { get; set; }
+    }
 
-        public FrequencyType? FrequencyType { get; set; }
+    public class CreateItemInstanceWithNewItemModel : RecurrenceInputModel
+    {
+        [Required, MinLength(2), MaxLength(128)]
+        public required string Name { get; set; }
 
-        public int Frequency {  get; set; } = 1;
+        public required int ItemCollectionId { get; set; }
 
         public required DateTimeOffset PeriodStartDate { get; set; }
     }

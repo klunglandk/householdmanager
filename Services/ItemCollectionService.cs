@@ -12,7 +12,7 @@ namespace HouseholdManager.Services
 
         List<ItemCollection> GetAllItemCollections();
 
-        void UpdateItemCollection(int itemCollectionId, UpdateItemCollectionModel model);
+        ItemCollection? UpdateItemCollection(int itemCollectionId, UpdateItemCollectionModel model);
 
         bool DeleteItemCollection(int itemCollectionId);
     }
@@ -42,11 +42,12 @@ namespace HouseholdManager.Services
             return _context.ItemCollections.Where(collection => collection.Status == ItemCollectionStatus.Normal).ToList();
         }
 
-        public void UpdateItemCollection(int itemCollectionId, UpdateItemCollectionModel model)
+        public ItemCollection? UpdateItemCollection(int itemCollectionId, UpdateItemCollectionModel model)
         {
-            var result = GetItemCollection(itemCollectionId) ?? throw new InvalidOperationException("ItemCollection not found");
-            if (model.Name is { } name) { result.Name = name; }
+            if (GetItemCollection(itemCollectionId) is not { } itemCollection) return null;
+            if (model.Name is { } name) { itemCollection.Name = name; }
             _context.SaveChanges();
+            return itemCollection;
         }
 
         public bool DeleteItemCollection(int itemCollectionId)

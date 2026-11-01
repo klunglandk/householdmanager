@@ -11,6 +11,8 @@ namespace HouseholdManager.Dtos
 
         public bool IsDone => DoneDate != null;
 
+        public int ItemId { get; set; }
+
         public string ItemName { get; set; } = string.Empty;
 
         public FrequencyType? FrequencyType { get; set; }
@@ -24,6 +26,7 @@ namespace HouseholdManager.Dtos
                 Id = itemInstance.Id,
                 PeriodStartDate = itemInstance.PeriodStartDate,
                 DoneDate = itemInstance.DoneDate,
+                ItemId = itemInstance.ItemId,
                 ItemName = itemInstance.Item.Name,
                 FrequencyType = itemInstance.Item.RecurrenceRule?.FrequencyType,
                 Frequency = itemInstance.Item.RecurrenceRule?.Frequency

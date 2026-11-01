@@ -6,9 +6,9 @@ namespace HouseholdManager.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class ItemController : ControllerBase
+    public class ItemsController : ControllerBase
     {
-        public ItemController(IItemService itemService) {
+        public ItemsController(IItemService itemService) {
             _itemService = itemService;
         }
 
@@ -22,11 +22,10 @@ namespace HouseholdManager.Controllers
             return Ok(result);
         }
 
-        [HttpPost]
-        public IActionResult Create([FromBody]CreateItemModel model)
+        [HttpGet]
+        public IActionResult GetAll(int itemCollectionId)
         {
-            var newItem = _itemService.CreateItem(model);
-            var result = ItemDto.Map(newItem);
+            var result = ItemDto.MapItems(_itemService.GetAllItems(itemCollectionId));
             return Ok(result);
         }
 
@@ -38,14 +37,7 @@ namespace HouseholdManager.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{itemId}")]
-        public IActionResult DeleteItem(int itemId)
-        {
-            if (!_itemService.DeleteItem(itemId)) return NotFound();
-            return Ok();
-        }
-
-        [HttpDelete("{itemId}")]
+        [HttpDelete("{itemId}/recurrence-rule")]
         public IActionResult DeleteRule(int itemId)
         {
             if (!_itemService.DeleteRecurrenceRule(itemId)) return NotFound();

@@ -156,9 +156,9 @@ Content-Type: application/json
   "periodStartDate": "2026-11-08T00:00:00+01:00"
 }
 
-### Changes name on item 3 for the future, should return a NEW item with a new id and the same rule
+### Changes name on item 1 for the future, should return a NEW item with a new id and the same rule
 
-POST http://localhost:5260/api/Items/3/update-future
+POST http://localhost:5260/api/Items/1/update-future
 Content-Type: application/json
 
 {
@@ -168,3 +168,33 @@ Content-Type: application/json
 ### Item 3 should now have no rule, and the new item should have it
 
 GET http://localhost:5260/api/Items?itemCollectionId=1
+
+### Creates a new item with a weekly rule
+
+POST http://localhost:5260/api/ItemInstances/new-item
+Content-Type: application/json
+
+{
+  "name": "Buy milk",
+  "itemCollectionId": 1,
+  "frequencyType": 1,
+  "periodStartDate": "2026-11-08T00:00:00+01:00"
+}
+
+### Nothing changed, should return item 2 itself (same id, no new item created)
+
+POST http://localhost:5260/api/Items/2/update-future
+Content-Type: application/json
+
+{
+  "name": "Buy oat milk"
+}
+
+### Item 1 has no rule, should return 404 (with JSON this time)
+
+POST http://localhost:5260/api/Items/1/update-future
+Content-Type: application/json
+
+{
+  "name": "Whatever"
+}

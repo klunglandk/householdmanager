@@ -77,11 +77,12 @@ namespace HouseholdManager.Services
         public Item? UpdateFutureItem(int itemId, UpdateItemModel model)
         {
             if (GetItem(itemId) is not { } item) return null;
+            if (item.RecurrenceRule is not { } rule) return null;
 
             var nameChanged = model.Name is { } name && name != item.Name;
-            var frequencyTypeChanged = model.FrequencyType is { } frequencyType && frequencyType != item.RecurrenceRule?.FrequencyType;
-            var frequencyChanged = model.Frequency is { } frequency && frequency != item.RecurrenceRule?.Frequency;
-            var intervalChanged = model.Interval is { } interval && interval != item.RecurrenceRule?.Interval;
+            var frequencyTypeChanged = model.FrequencyType is { } frequencyType && frequencyType != rule.FrequencyType;
+            var frequencyChanged = model.Frequency is { } frequency && frequency != rule.Frequency;
+            var intervalChanged = model.Interval is { } interval && interval != rule.Interval;
 
             if (!nameChanged && !frequencyTypeChanged && !frequencyChanged && !intervalChanged) return item;
 
@@ -93,12 +94,12 @@ namespace HouseholdManager.Services
 
             _recurrenceRuleService.CreateRecurrenceRule(
                 newItem, 
-                model.FrequencyType ?? item.RecurrenceRule?.FrequencyType, 
-                model.Frequency ?? item.RecurrenceRule?.Frequency, 
-                model.Interval ?? item.RecurrenceRule?.Interval
+                model.FrequencyType ?? rule.FrequencyType, 
+                model.Frequency ?? rule.Frequency, 
+                model.Interval ?? rule.Interval
                 );
 
-            if (item.RecurrenceRule is { } rule) _recurrenceRuleService.DeleteRecurrenceRule(rule);
+            _recurrenceRuleService.DeleteRecurrenceRule(rule);
 
             _context.Items.Add(newItem);
             _context.SaveChanges();

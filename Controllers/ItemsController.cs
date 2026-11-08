@@ -37,5 +37,13 @@ namespace HouseholdManager.Controllers
             return Ok(result);
         }
 
+        [HttpPost("{itemId}/update-future")]
+        public IActionResult UpdateFutureItem(int itemId, [FromBody] UpdateItemModel model)
+        {
+            if (_itemService.UpdateFutureItem(itemId, model) is not { } item) return NotFound();
+            var result = ItemDto.Map(item);
+            return Ok(result);
+        }
+
     }
 }

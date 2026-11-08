@@ -37,12 +37,5 @@ namespace HouseholdManager.Controllers
             return Ok(result);
         }
 
-        [HttpDelete("{itemId}/recurrence-rule")]
-        public IActionResult DeleteRule(int itemId)
-        {
-            if (!_itemService.DeleteRecurrenceRule(itemId)) return NotFound();
-            return Ok();
-        }
-
     }
 }

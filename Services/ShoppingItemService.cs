@@ -167,7 +167,7 @@ namespace HouseholdManager.Services
     {
         public required int ProductId { get; set; }
 
-        [Range(typeof(decimal), "0.0001", "1000000")]
+        [Range(0.0001, 1000000)]
         public required decimal Amount { get; set; }
 
         public required MeasurementUnit Unit { get; set; }
@@ -175,7 +175,7 @@ namespace HouseholdManager.Services
 
     public class UpdateShoppingItemModel
     {
-        [Range(typeof(decimal), "0.0001", "1000000")]
+        [Range(0.0001, 1000000)]
         public decimal? Amount { get; set; }
 
         public MeasurementUnit? Unit { get; set; }

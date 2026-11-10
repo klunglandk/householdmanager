@@ -10,7 +10,7 @@ namespace HouseholdManager.Database.DataModels
 
         public Household Household { get; set; } = default!;
 
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
 
         public User? User { get; set; }
 

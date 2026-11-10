@@ -10,7 +10,7 @@ namespace HouseholdManager.Dtos
 
         public int HouseholdId { get; set; }
 
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
 
         public FrequencyType? Frequency { get; set; }
 

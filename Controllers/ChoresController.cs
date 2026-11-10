@@ -23,7 +23,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId, int? userId)
+        public IActionResult GetAll(int householdId, string? userId)
         {
             var result = ChoreDto.MapCollection(_choreService.GetAllChores(householdId, userId));
             return Ok(result);

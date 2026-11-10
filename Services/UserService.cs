@@ -5,7 +5,7 @@ namespace HouseholdManager.Services
 {
     public interface IUserService
     {
-        User? GetUser(int userId);
+        User? GetUser(string userId);
     }
     public class UserService : IUserService
     {
@@ -14,7 +14,7 @@ namespace HouseholdManager.Services
         }
 
         private readonly HouseholdContext _context;
-        public User? GetUser(int userId)
+        public User? GetUser(string userId)
         {
             return _context.Users.FirstOrDefault(user => user.Id == userId);
         }

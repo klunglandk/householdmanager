@@ -3,6 +3,7 @@ using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
 using HouseholdManager.Services;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace HouseholdManager
@@ -32,6 +33,13 @@ namespace HouseholdManager
                 options.UseInMemoryDatabase("household");
             });
 
+            builder.Services.AddIdentityCore<User>()
+                .AddRoles<IdentityRole>()
+                .AddEntityFrameworkStores<HouseholdContext>();
+            builder.Services.AddAuthentication()
+                .AddJwtBearer();
+
+
             builder.Services.AddScoped<IHouseholdService, HouseholdService>();
             builder.Services.AddScoped<IChoreService, ChoreService>();
             builder.Services.AddScoped<IChoreInstanceService, ChoreInstanceService>();
@@ -51,6 +59,7 @@ namespace HouseholdManager
             builder.Services.AddScoped<IChoreInstanceGenerator, ChoreInstanceGenerator>();
             builder.Services.AddHostedService<RecurrenceGenerationBackgroundService>();
 
+
             var app = builder.Build();
 
             app.UseExceptionHandler();
@@ -59,6 +68,15 @@ namespace HouseholdManager
             {
                 var context = scope.ServiceProvider.GetRequiredService<HouseholdContext>();
                 context.Database.EnsureCreated();
+
+                var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>();
+                foreach (var roleName in new[] { "admin", "child" })
+                {
+                    if (!roleManager.RoleExistsAsync(roleName).GetAwaiter().GetResult())
+                    {
+                        roleManager.CreateAsync(new IdentityRole(roleName)).GetAwaiter().GetResult();
+                    }
+                }
             }
 
                 // Configure the HTTP request pipeline.
@@ -69,6 +87,7 @@ namespace HouseholdManager
 
             //app.UseHttpsRedirection();
 
+            app.UseAuthentication();
             app.UseAuthorization();
 
 

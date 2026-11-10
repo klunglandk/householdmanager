@@ -1,9 +1,10 @@
 ﻿using HouseholdManager.Database.DataModels;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace HouseholdManager.Database
 {
-    public class HouseholdContext : DbContext
+    public class HouseholdContext : IdentityDbContext<User>
     {
 
         public HouseholdContext(DbContextOptions<HouseholdContext> options) : base(options)
@@ -12,8 +13,6 @@ namespace HouseholdManager.Database
         }
 
         public DbSet<Household> Households { get; set; }
-
-        public DbSet<User> Users { get; set; }
 
         public DbSet<Chore> Chores { get; set; }
 
@@ -44,8 +43,6 @@ namespace HouseholdManager.Database
 
             modelBuilder.Entity<User>(e =>
             {
-                e.HasKey(p => p.Id);
-                e.Property(p => p.Id).ValueGeneratedOnAdd();
                 e.HasOne(p => p.Household).WithMany(p => p.Users).HasForeignKey(p => p.HouseholdId);
             });
 

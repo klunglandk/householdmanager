@@ -1,10 +1,8 @@
-﻿namespace HouseholdManager.Database.DataModels
+﻿using Microsoft.AspNetCore.Identity;
+namespace HouseholdManager.Database.DataModels
 {
-    public class User
+    public class User : IdentityUser
     {
-        public int Id { get; set; }
-
-        public string UserName { get; set; } = string.Empty;
 
         public int HouseholdId { get; set; }
 

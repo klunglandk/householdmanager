@@ -10,7 +10,7 @@ namespace HouseholdManager.Services
     {
         ChoreInstance? GetChoreInstance(int choreInstanceId);
 
-        List<ChoreInstance> GetAllChoreInstances(int householdId, DateTimeOffset? from, DateTimeOffset? to, int? userId);
+        List<ChoreInstance> GetAllChoreInstances(int householdId, DateTimeOffset? from, DateTimeOffset? to, string? userId);
 
         ChoreInstance? CreateChoreInstance(CreateChoreInstanceModel model);
 
@@ -48,7 +48,7 @@ namespace HouseholdManager.Services
                 .FirstOrDefault(instance => instance.Id == choreInstanceId);
         }
 
-        public List<ChoreInstance> GetAllChoreInstances(int householdId, DateTimeOffset? from, DateTimeOffset? to, int? userId)
+        public List<ChoreInstance> GetAllChoreInstances(int householdId, DateTimeOffset? from, DateTimeOffset? to, string? userId)
         {
             var query = _context.ChoreInstances
                 .Include(instance => instance.Chore)
@@ -181,7 +181,7 @@ namespace HouseholdManager.Services
 
         public required int HouseholdId { get; set; }
 
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
 
         public required DateTimeOffset PeriodStartDate { get; set; }
     }

@@ -24,7 +24,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId, DateTimeOffset? from, DateTimeOffset? to, int? userId)
+        public IActionResult GetAll(int householdId, DateTimeOffset? from, DateTimeOffset? to, string? userId)
         {
             var result = ChoreInstanceDto.MapCollection(_choreInstanceService.GetAllChoreInstances(householdId, from, to, userId));
             return Ok(result);

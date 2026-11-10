@@ -20,7 +20,7 @@ namespace HouseholdManager.Dtos
 
         public string ChoreName { get; set; } = string.Empty;
 
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
 
         public FrequencyType? Frequency { get; set; }
 

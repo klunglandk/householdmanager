@@ -4,7 +4,7 @@ namespace HouseholdManager.Dtos
 {
     public class UserDto
     {
-        public int Id { get; set; }
+        public string Id { get; set; } = string.Empty;
 
         public string UserName { get; set; } = string.Empty;
 
@@ -15,7 +15,7 @@ namespace HouseholdManager.Dtos
             var result = new UserDto
             {
                 Id = user.Id,
-                UserName = user.UserName,
+                UserName = user.UserName ?? string.Empty,
                 HouseholdId = user.HouseholdId
             };
             return result;

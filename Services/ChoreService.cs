@@ -10,7 +10,7 @@ namespace HouseholdManager.Services
     {
         Chore? GetChore(int choreId);
 
-        List<Chore> GetAllChores(int householdId, int? userId);
+        List<Chore> GetAllChores(int householdId, string? userId);
 
         Chore CreateChore(CreateChoreModel model);
 
@@ -39,7 +39,7 @@ namespace HouseholdManager.Services
                 .FirstOrDefault(chore => chore.Id == choreId);
         }
 
-        public List<Chore> GetAllChores(int householdId, int? userId)
+        public List<Chore> GetAllChores(int householdId, string? userId)
         {
             var query = _context.Chores.Where(chore => chore.HouseholdId == householdId);
             if (userId is { } id) query = query.Where(chore => chore.UserId == id);
@@ -141,7 +141,7 @@ namespace HouseholdManager.Services
 
         public required int HouseholdId { get; set; }
 
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
 
     }
 
@@ -150,7 +150,7 @@ namespace HouseholdManager.Services
         [MinLength(2), MaxLength(128)]
         public string? Name { get; set; }
 
-        public int? UserId { get; set; }
+        public string? UserId { get; set; }
 
     }
 }

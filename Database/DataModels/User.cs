@@ -6,7 +6,11 @@
 
         public string UserName { get; set; } = string.Empty;
 
-        public List<ItemCollection> ItemCollections { get; set; } = [];
+        public int HouseholdId { get; set; }
+
+        public Household Household { get; set; } = default!;
+
+        public List<Chore> Chores { get; set; } = [];
 
     }
 }

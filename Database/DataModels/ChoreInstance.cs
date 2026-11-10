@@ -1,8 +1,8 @@
-﻿using HouseholdManager.Dtos;
+using HouseholdManager.Dtos;
 
 namespace HouseholdManager.Database.DataModels
 {
-    public class ItemInstance
+    public class ChoreInstance
     {
         public int Id { get; set; }
 
@@ -12,8 +12,8 @@ namespace HouseholdManager.Database.DataModels
 
         public bool IsDone => DoneDate != null;
 
-        public Item Item { get; set; } = default!;
-        public int ItemId { get; set; }
+        public Chore Chore { get; set; } = default!;
+        public int ChoreId { get; set; }
 
         public ItemInstanceDto Map()
         {

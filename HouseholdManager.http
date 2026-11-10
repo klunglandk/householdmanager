@@ -1,200 +1,362 @@
-# ItemCollection
-### Gets all Item Collections
-GET http://localhost:5260/api/ItemCollections
+# Household
+### Gets all households
+GET http://localhost:5260/api/Households
 
-### Gets the Item Collection with id 1
+### Gets the household with id 1
 
-GET http://localhost:5260/api/ItemCollections/1
+GET http://localhost:5260/api/Households/1
 
-### Gets the Item Collection with id 2, when deleted it should show status 1 instead of 0
+### Gets the household with id 999, should return 404 if it doesn't exist
 
-GET http://localhost:5260/api/ItemCollections/2
+GET http://localhost:5260/api/Households/999
 
-### Gets the Item Collection with id 999, should return 404 if it doesn't exist
+### Adds a new household
 
-GET http://localhost:5260/api/ItemCollections/999
-
-### Adds a new Item Collection
-
-POST http://localhost:5260/api/ItemCollections
+POST http://localhost:5260/api/Households
 Content-Type: application/json
 
 {
-  "name": "Aa",
-  "ownerId": 1
+  "name": "Aa"
 }
 
 ### Should return 400 with a message explaining minimum length of 2 required
 
-POST http://localhost:5260/api/ItemCollections
+POST http://localhost:5260/api/Households
 Content-Type: application/json
 
 {
-  "name": "A",
-  "ownerId": 1
+  "name": "A"
 }
 
-### Updates collection name for id 2
+### Updates household name for id 2
 
-POST http://localhost:5260/api/ItemCollections/2
+POST http://localhost:5260/api/Households/2
 Content-Type: application/json
 
 {
-  "name": "Changed collection name"
+  "name": "Changed household name"
 }
 
 ### Testing if update runs with no changes, should return 200
 
-POST http://localhost:5260/api/ItemCollections/2
+POST http://localhost:5260/api/Households/2
 Content-Type: application/json
 
 {}
 
-### Sets collection with id 2 to archived, should not show up when getting all collections afterwards
+### Deletes household with id 2, should return 404 on get afterwards
 
-DELETE http://localhost:5260/api/ItemCollections/2
+DELETE http://localhost:5260/api/Households/2
 
-# ItemInstance
-### Creates new instance with new item
+# ChoreInstance
+### Creates new instance with new chore
 
-POST http://localhost:5260/api/ItemInstances/new-item
+POST http://localhost:5260/api/ChoreInstances/new-chore
 Content-Type: application/json
 
 {
   "name": "Mop the floors",
-  "itemCollectionId": 1,
+  "householdId": 1,
   "periodStartDate": "2026-11-08T00:00:00+01:00"
 }
 
-### Creates new instance from item with id 1
+### Creates new instance from chore with id 1
 
-POST http://localhost:5260/api/ItemInstances
+POST http://localhost:5260/api/ChoreInstances
 Content-Type: application/json
 
 {
-  "itemId": 4,
+  "choreId": 1,
   "periodStartDate": "2026-11-08T00:00:00+01:00"
 }
 
-### Get iteminstance with id 1
+### Get choreinstance with id 1
 
-GET http://localhost:5260/api/ItemInstances/1
+GET http://localhost:5260/api/ChoreInstances/1
 
-### Get all iteminstances for item collection with id 1
+### Get all choreinstances for household with id 1
 
-GET http://localhost:5260/api/ItemInstances?itemCollectionId=1
+GET http://localhost:5260/api/ChoreInstances?householdId=1
 
 ### Marks instance with id 1 as done
 
-POST http://localhost:5260/api/ItemInstances/1/mark-as-done
+POST http://localhost:5260/api/ChoreInstances/1/mark-as-done
 
 ### Clears done date for instance with id 1
 
-POST http://localhost:5260/api/ItemInstances/1/clear-done-date
+POST http://localhost:5260/api/ChoreInstances/1/clear-done-date
 
-### Delete iteminstance with id 2
+### Delete choreinstance with id 1
 
-DELETE http://localhost:5260/api/ItemInstances/1
+DELETE http://localhost:5260/api/ChoreInstances/1
 
-# Item
-### Gets all items
+### Instance for a chore that doesn't exist, should return 404
 
-GET http://localhost:5260/api/Items?itemCollectionId=1
-
-### Gets item with id 3
-
-GET http://localhost:5260/api/Items/3
-
-### Updates item with id 4
-
-POST http://localhost:5260/api/Items/4
+POST http://localhost:5260/api/ChoreInstances
 Content-Type: application/json
 
 {
-  "name": "Changed item name"
-}
-
-### Gets item 999, should return 404
-
-GET http://localhost:5260/api/Items/999
-
-### Adds a weekly rule to item 3
-
-POST http://localhost:5260/api/Items/3
-Content-Type: application/json
-
-{
-  "frequencyType": 1
-}
-
-### Frequency without frequencyType, should return 400
-
-POST http://localhost:5260/api/Items/3
-Content-Type: application/json
-
-{
-  "frequency": 2
-}
-
-### Updates an existing rule on item 3, should change type and frequency, interval stays 1
-
-POST http://localhost:5260/api/Items/3
-Content-Type: application/json
-
-{
-  "frequencyType": 2,
-  "frequency": 3
-}
-
-### Instance for an item that doesn't exist, should return 404
-
-POST http://localhost:5260/api/ItemInstances
-Content-Type: application/json
-
-{
-  "itemId": 999,
+  "choreId": 999,
   "periodStartDate": "2026-11-08T00:00:00+01:00"
 }
 
-### Changes name on item 1 for the future, should return a NEW item with a new id and the same rule
+# Chore
+### Gets all chores
 
-POST http://localhost:5260/api/Items/1/update-future
+GET http://localhost:5260/api/Chores?householdId=1
+
+### Gets chore with id 1
+
+GET http://localhost:5260/api/Chores/1
+
+### Gets chore 999, should return 404
+
+GET http://localhost:5260/api/Chores/999
+
+### Updates name on chore with id 1
+
+POST http://localhost:5260/api/Chores/1
 Content-Type: application/json
 
 {
-  "name": "Buy oat milk"
+  "name": "Changed chore name"
 }
 
-### Item 3 should now have no rule, and the new item should have it
+### Assigns chore 1 to user 1
 
-GET http://localhost:5260/api/Items?itemCollectionId=1
+POST http://localhost:5260/api/Chores/1
+Content-Type: application/json
 
-### Creates a new item with a weekly rule
+{
+  "userId": 1
+}
 
-POST http://localhost:5260/api/ItemInstances/new-item
+### Adds a weekly rule to chore 1 (frequency 1 = Weekly)
+
+POST http://localhost:5260/api/Chores/1
+Content-Type: application/json
+
+{
+  "frequency": 1
+}
+
+### Sets weekdays to Monday + Wednesday + Friday (1 + 4 + 16 = 21)
+
+POST http://localhost:5260/api/Chores/1
+Content-Type: application/json
+
+{
+  "frequency": 1,
+  "weekdays": 21
+}
+
+### Interval without frequency, should return 400
+
+POST http://localhost:5260/api/Chores/1
+Content-Type: application/json
+
+{
+  "interval": 2
+}
+
+### Weekdays without frequency, should return 400
+
+POST http://localhost:5260/api/Chores/1
+Content-Type: application/json
+
+{
+  "weekdays": 1
+}
+
+### Creates a new chore with a weekly rule on Mondays
+
+POST http://localhost:5260/api/ChoreInstances/new-chore
 Content-Type: application/json
 
 {
   "name": "Buy milk",
-  "itemCollectionId": 1,
-  "frequencyType": 1,
+  "householdId": 1,
+  "frequency": 1,
+  "weekdays": 1,
   "periodStartDate": "2026-11-08T00:00:00+01:00"
 }
 
-### Nothing changed, should return item 2 itself (same id, no new item created)
+### Changes name on chore 2 for the future, should return a NEW chore with a new id and the same rule
 
-POST http://localhost:5260/api/Items/2/update-future
+POST http://localhost:5260/api/Chores/2/update-future
 Content-Type: application/json
 
 {
   "name": "Buy oat milk"
 }
 
-### Item 1 has no rule, should return 404 (with JSON this time)
+### Nothing changed, should return chore 2 itself (same id, no new chore created)
 
-POST http://localhost:5260/api/Items/1/update-future
+POST http://localhost:5260/api/Chores/2/update-future
+Content-Type: application/json
+
+{
+  "name": "Buy milk"
+}
+
+### Chore without a rule, should return 404
+
+POST http://localhost:5260/api/Chores/1/update-future
 Content-Type: application/json
 
 {
   "name": "Whatever"
 }
+
+# Product
+### Creates a product
+
+POST http://localhost:5260/api/Products
+Content-Type: application/json
+
+{
+  "name": "Milk",
+  "householdId": 1
+}
+
+### Gets all products for household 1
+
+GET http://localhost:5260/api/Products?householdId=1
+
+### Gets product with id 1
+
+GET http://localhost:5260/api/Products/1
+
+### Updates product name
+
+POST http://localhost:5260/api/Products/1
+Content-Type: application/json
+
+{
+  "name": "Oat milk"
+}
+
+### Deletes product with id 1
+
+DELETE http://localhost:5260/api/Products/1
+
+# ShoppingItem
+### Creates a shopping item for product 1 (unit 4 = Liter)
+
+POST http://localhost:5260/api/ShoppingItems
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "amount": 2,
+  "unit": 4
+}
+
+### Shopping item for a product that doesn't exist, should return 404
+
+POST http://localhost:5260/api/ShoppingItems
+Content-Type: application/json
+
+{
+  "productId": 999,
+  "amount": 2,
+  "unit": 4
+}
+
+### Amount of 0, should return 400
+
+POST http://localhost:5260/api/ShoppingItems
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "amount": 0,
+  "unit": 4
+}
+
+### Gets all shopping items for household 1
+
+GET http://localhost:5260/api/ShoppingItems?householdId=1
+
+### Gets shopping item with id 1
+
+GET http://localhost:5260/api/ShoppingItems/1
+
+### Updates amount on shopping item 1
+
+POST http://localhost:5260/api/ShoppingItems/1
+Content-Type: application/json
+
+{
+  "amount": 3
+}
+
+### Marks shopping item 1 as bought
+
+POST http://localhost:5260/api/ShoppingItems/1/mark-as-bought
+
+### Clears bought date on shopping item 1
+
+POST http://localhost:5260/api/ShoppingItems/1/clear-bought-date
+
+### Deletes shopping item 1
+
+DELETE http://localhost:5260/api/ShoppingItems/1
+
+# Recipe
+### Creates a recipe
+
+POST http://localhost:5260/api/Recipes
+Content-Type: application/json
+
+{
+  "name": "Pancakes",
+  "instructions": "Mix and fry.",
+  "servings": 4,
+  "householdId": 1
+}
+
+### Gets all recipes for household 1
+
+GET http://localhost:5260/api/Recipes?householdId=1
+
+### Gets recipe with id 1
+
+GET http://localhost:5260/api/Recipes/1
+
+### Updates recipe 1
+
+POST http://localhost:5260/api/Recipes/1
+Content-Type: application/json
+
+{
+  "servings": 6
+}
+
+### Adds an ingredient to recipe 1 (product 1, unit 3 = Deciliter)
+
+POST http://localhost:5260/api/Recipes/1/ingredients
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "amount": 5,
+  "unit": 3
+}
+
+### Updates ingredient 1
+
+POST http://localhost:5260/api/Recipes/ingredients/1
+Content-Type: application/json
+
+{
+  "amount": 7
+}
+
+### Deletes ingredient 1
+
+DELETE http://localhost:5260/api/Recipes/ingredients/1
+
+### Deletes recipe 1
+
+DELETE http://localhost:5260/api/Recipes/1

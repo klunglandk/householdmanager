@@ -12,6 +12,10 @@ namespace HouseholdManager.Database.DataModels
 
         public bool IsDone => DoneDate != null;
 
+        public DateTimeOffset? SkippedDate { get; set; }
+
+        public bool IsSkipped => SkippedDate != null;
+
         public Chore Chore { get; set; } = default!;
         public int ChoreId { get; set; }
 

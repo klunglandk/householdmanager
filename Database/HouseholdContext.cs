@@ -29,6 +29,8 @@ namespace HouseholdManager.Database
 
         public DbSet<ShoppingItem> ShoppingItems { get; set; }
 
+        public DbSet<SchoolPlan> SchoolPlans { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -99,6 +101,15 @@ namespace HouseholdManager.Database
                 e.HasKey(p => p.Id);
                 e.Property(p => p.Id).ValueGeneratedOnAdd();
                 e.HasOne(p => p.Product).WithMany(p => p.ShoppingItems).HasForeignKey(p => p.ProductId);
+            });
+
+            modelBuilder.Entity<SchoolPlan>(e =>
+            {
+                e.HasKey(p => p.Id);
+                e.Property(p => p.Id).ValueGeneratedOnAdd();
+                e.Property(p => p.StoredFileName).HasMaxLength(64);
+                e.Property(p => p.OriginalFileName).HasMaxLength(255);
+                e.HasOne(p => p.Household).WithMany(p => p.SchoolPlans).HasForeignKey(p => p.HouseholdId);
             });
         }
     }

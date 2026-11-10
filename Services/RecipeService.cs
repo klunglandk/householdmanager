@@ -1,5 +1,6 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
@@ -17,23 +18,23 @@ namespace HouseholdManager.Services
 
         bool DeleteRecipe(int recipeId);
 
-        Ingredient? AddIngredient(int recipeId, CreateIngredientModel model);
+        Task<Recipe?> SetImageAsync(int recipeId, Stream content, CancellationToken cancellationToken);
 
-        Ingredient? UpdateIngredient(int ingredientId, UpdateIngredientModel model);
+        Stream? OpenImage(Recipe recipe);
 
-        bool DeleteIngredient(int ingredientId);
+        Recipe? RemoveImage(int recipeId);
     }
 
     public class RecipeService : IRecipeService
     {
-        public RecipeService(HouseholdContext context, IProductService productService)
+        public RecipeService(HouseholdContext context, IFileStorage fileStorage)
         {
             _context = context;
-            _productService = productService;
+            _fileStorage = fileStorage;
         }
 
         private readonly HouseholdContext _context;
-        private readonly IProductService _productService;
+        private readonly IFileStorage _fileStorage;
 
         public Recipe? GetRecipe(int recipeId)
         {
@@ -59,7 +60,6 @@ namespace HouseholdManager.Services
                 Name = model.Name,
                 Instructions = model.Instructions,
                 Servings = model.Servings,
-                ImagePath = model.ImagePath,
                 HouseholdId = model.HouseholdId
             });
             _context.SaveChanges();
@@ -72,7 +72,6 @@ namespace HouseholdManager.Services
             if (model.Name is { } name) recipe.Name = name;
             if (model.Instructions is { } instructions) recipe.Instructions = instructions;
             if (model.Servings is { } servings) recipe.Servings = servings;
-            if (model.ImagePath is { } imagePath) recipe.ImagePath = imagePath;
             _context.SaveChanges();
             return recipe;
         }
@@ -82,46 +81,46 @@ namespace HouseholdManager.Services
             if (GetRecipe(recipeId) is not { } recipe) return false;
             _context.Recipes.Remove(recipe);
             _context.SaveChanges();
+            if (recipe.ImagePath is { } imagePath) _fileStorage.Delete(imagePath);
             return true;
         }
 
-        public Ingredient? AddIngredient(int recipeId, CreateIngredientModel model)
+        public async Task<Recipe?> SetImageAsync(int recipeId, Stream content, CancellationToken cancellationToken)
         {
-            var recipe = _context.Recipes.FirstOrDefault(r => r.Id == recipeId);
-            if (recipe is null) return null;
-            if (_productService.GetProduct(model.ProductId) is not { } product) return null;
+            if (GetRecipe(recipeId) is not { } recipe) return null;
 
-            var result = _context.Ingredients.Add(new Ingredient
+            var newImagePath = await _fileStorage.SaveAsync(content, AllowedFileKind.Image, cancellationToken);
+            var oldImagePath = recipe.ImagePath;
+            recipe.ImagePath = newImagePath;
+
+            try
             {
-                Recipe = recipe,
-                Product = product,
-                Amount = model.Amount,
-                Unit = model.Unit
-            });
-            _context.SaveChanges();
-            return result.Entity;
+                _context.SaveChanges();
+            }
+            catch
+            {
+                _fileStorage.Delete(newImagePath);
+                throw;
+            }
+
+            if (oldImagePath is not null) _fileStorage.Delete(oldImagePath);
+            return recipe;
         }
 
-        public Ingredient? UpdateIngredient(int ingredientId, UpdateIngredientModel model)
+        public Stream? OpenImage(Recipe recipe)
         {
-            var ingredient = _context.Ingredients
-                .Include(i => i.Product)
-                .FirstOrDefault(i => i.Id == ingredientId);
-            if (ingredient is null) return null;
-
-            if (model.Amount is { } amount) ingredient.Amount = amount;
-            if (model.Unit is { } unit) ingredient.Unit = unit;
-            _context.SaveChanges();
-            return ingredient;
+            return recipe.ImagePath is { } imagePath ? _fileStorage.Open(imagePath) : null;
         }
 
-        public bool DeleteIngredient(int ingredientId)
+        public Recipe? RemoveImage(int recipeId)
         {
-            var ingredient = _context.Ingredients.FirstOrDefault(i => i.Id == ingredientId);
-            if (ingredient is null) return false;
-            _context.Ingredients.Remove(ingredient);
+            if (GetRecipe(recipeId) is not { } recipe) return null;
+
+            var oldImagePath = recipe.ImagePath;
+            recipe.ImagePath = null;
             _context.SaveChanges();
-            return true;
+            if (oldImagePath is not null) _fileStorage.Delete(oldImagePath);
+            return recipe;
         }
     }
 
@@ -135,8 +134,6 @@ namespace HouseholdManager.Services
         [Range(1, int.MaxValue)]
         public int? Servings { get; set; }
 
-        public string? ImagePath { get; set; }
-
         public required int HouseholdId { get; set; }
     }
 
@@ -149,25 +146,5 @@ namespace HouseholdManager.Services
 
         [Range(1, int.MaxValue)]
         public int? Servings { get; set; }
-
-        public string? ImagePath { get; set; }
-    }
-
-    public class CreateIngredientModel
-    {
-        public required int ProductId { get; set; }
-
-        [Range(typeof(decimal), "0.0001", "1000000")]
-        public required decimal Amount { get; set; }
-
-        public required MeasurementUnit Unit { get; set; }
-    }
-
-    public class UpdateIngredientModel
-    {
-        [Range(typeof(decimal), "0.0001", "1000000")]
-        public decimal? Amount { get; set; }
-
-        public MeasurementUnit? Unit { get; set; }
     }
 }

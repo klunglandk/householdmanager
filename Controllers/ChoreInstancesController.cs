@@ -24,9 +24,9 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId)
+        public IActionResult GetAll(int householdId, DateTimeOffset? from, DateTimeOffset? to, int? userId)
         {
-            var result = ChoreInstanceDto.MapCollection(_choreInstanceService.GetAllChoreInstances(householdId));
+            var result = ChoreInstanceDto.MapCollection(_choreInstanceService.GetAllChoreInstances(householdId, from, to, userId));
             return Ok(result);
         }
 
@@ -57,6 +57,20 @@ namespace HouseholdManager.Controllers
         public IActionResult ClearDoneDate(int choreInstanceId)
         {
             if (_choreInstanceService.ClearDoneDate(choreInstanceId) is not { } choreInstance) return NotFound();
+            return Ok(choreInstance.Map());
+        }
+
+        [HttpPost("{choreInstanceId}/mark-as-skipped")]
+        public IActionResult MarkAsSkipped(int choreInstanceId)
+        {
+            if (_choreInstanceService.MarkAsSkipped(choreInstanceId) is not { } choreInstance) return NotFound();
+            return Ok(choreInstance.Map());
+        }
+
+        [HttpPost("{choreInstanceId}/clear-skipped-date")]
+        public IActionResult ClearSkippedDate(int choreInstanceId)
+        {
+            if (_choreInstanceService.ClearSkippedDate(choreInstanceId) is not { } choreInstance) return NotFound();
             return Ok(choreInstance.Map());
         }
 

@@ -1,5 +1,6 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
 namespace HouseholdManager.Services
@@ -19,12 +20,14 @@ namespace HouseholdManager.Services
 
     public class HouseholdService : IHouseholdService
     {
-        public HouseholdService(HouseholdContext context)
+        public HouseholdService(HouseholdContext context, IFileStorage fileStorage)
         {
             _context = context;
+            _fileStorage = fileStorage;
         }
 
         private readonly HouseholdContext _context;
+        private readonly IFileStorage _fileStorage;
 
         public Household CreateHousehold(CreateHouseholdModel model)
         {
@@ -55,8 +58,20 @@ namespace HouseholdManager.Services
         {
             if (GetHousehold(householdId) is not { } household) return false;
 
+            var storedFileNames = _context.Recipes
+                .Where(recipe => recipe.HouseholdId == householdId && recipe.ImagePath != null)
+                .Select(recipe => recipe.ImagePath!)
+                .ToList()
+                .Concat(_context.SchoolPlans.Where(plan => plan.HouseholdId == householdId).Select(plan => plan.StoredFileName))
+                .ToList();
+
             _context.Households.Remove(household);
             _context.SaveChanges();
+
+            foreach (var storedFileName in storedFileNames)
+            {
+                _fileStorage.Delete(storedFileName);
+            }
             return true;
         }
     }

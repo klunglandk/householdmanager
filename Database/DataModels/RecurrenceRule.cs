@@ -28,6 +28,8 @@
 
         public Weekdays Weekdays { get; set; }
 
+        public DateOnly StartDate { get; set; }
+
         public Chore Chore { get; set; } = default!;
     }
 }

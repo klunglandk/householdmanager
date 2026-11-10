@@ -10,7 +10,7 @@ namespace HouseholdManager.Services
     {
         ChoreInstance? GetChoreInstance(int choreInstanceId);
 
-        List<ChoreInstance> GetAllChoreInstances(int householdId);
+        List<ChoreInstance> GetAllChoreInstances(int householdId, DateTimeOffset? from, DateTimeOffset? to, int? userId);
 
         ChoreInstance? CreateChoreInstance(CreateChoreInstanceModel model);
 
@@ -20,19 +20,25 @@ namespace HouseholdManager.Services
 
         ChoreInstance? ClearDoneDate(int choreInstanceId);
 
+        ChoreInstance? MarkAsSkipped(int choreInstanceId);
+
+        ChoreInstance? ClearSkippedDate(int choreInstanceId);
+
         bool DeleteChoreInstance(int choreInstanceId);
 
     }
     public class ChoreInstanceService : IChoreInstanceService
     {
-        public ChoreInstanceService(HouseholdContext context, IChoreService choreService)
+        public ChoreInstanceService(HouseholdContext context, IChoreService choreService, IChoreInstanceGenerator instanceGenerator)
         {
             _context = context;
             _choreService = choreService;
+            _instanceGenerator = instanceGenerator;
         }
 
         private readonly HouseholdContext _context;
         private readonly IChoreService _choreService;
+        private readonly IChoreInstanceGenerator _instanceGenerator;
 
         public ChoreInstance? GetChoreInstance(int choreInstanceId)
         {
@@ -42,12 +48,18 @@ namespace HouseholdManager.Services
                 .FirstOrDefault(instance => instance.Id == choreInstanceId);
         }
 
-        public List<ChoreInstance> GetAllChoreInstances(int householdId)
+        public List<ChoreInstance> GetAllChoreInstances(int householdId, DateTimeOffset? from, DateTimeOffset? to, int? userId)
         {
-            return _context.ChoreInstances
+            var query = _context.ChoreInstances
                 .Include(instance => instance.Chore)
                 .ThenInclude(chore => chore.RecurrenceRule)
-                .Where(instance => instance.Chore.HouseholdId == householdId).ToList();
+                .Where(instance => instance.Chore.HouseholdId == householdId);
+
+            if (from is { } fromDate) query = query.Where(instance => instance.PeriodStartDate >= fromDate);
+            if (to is { } toDate) query = query.Where(instance => instance.PeriodStartDate < toDate);
+            if (userId is { } id) query = query.Where(instance => instance.Chore.UserId == id);
+
+            return query.ToList();
         }
 
         public ChoreInstance? CreateChoreInstance(CreateChoreInstanceModel model)
@@ -73,7 +85,8 @@ namespace HouseholdManager.Services
                 UserId = model.UserId,
                 Frequency = model.Frequency,
                 Interval = model.Interval,
-                Weekdays = model.Weekdays
+                Weekdays = model.Weekdays,
+                StartDate = model.StartDate ?? DateOnly.FromDateTime(model.PeriodStartDate.DateTime)
             };
             var newChore = _choreService.CreateChore(choreModel);
 
@@ -83,7 +96,14 @@ namespace HouseholdManager.Services
                 Chore = newChore,
             };
 
-            return SaveNewInstance(newInstance);
+            var savedInstance = SaveNewInstance(newInstance);
+
+            if (_instanceGenerator.StageInstancesForChore(newChore, _instanceGenerator.GetToday()) > 0)
+            {
+                _context.SaveChanges();
+            }
+
+            return savedInstance;
         }
 
         private ChoreInstance SaveNewInstance(ChoreInstance instance)
@@ -97,6 +117,7 @@ namespace HouseholdManager.Services
         {
             if (GetChoreInstance(choreInstanceId) is not { } instance) return null;
             instance.DoneDate = DateTimeOffset.UtcNow;
+            instance.SkippedDate = null;
             _context.SaveChanges();
             return instance;
         }
@@ -105,6 +126,23 @@ namespace HouseholdManager.Services
         {
             if (GetChoreInstance(choreInstanceId) is not { } instance) return null;
             instance.DoneDate = null;
+            _context.SaveChanges();
+            return instance;
+        }
+
+        public ChoreInstance? MarkAsSkipped(int choreInstanceId)
+        {
+            if (GetChoreInstance(choreInstanceId) is not { } instance) return null;
+            instance.SkippedDate = DateTimeOffset.UtcNow;
+            instance.DoneDate = null;
+            _context.SaveChanges();
+            return instance;
+        }
+
+        public ChoreInstance? ClearSkippedDate(int choreInstanceId)
+        {
+            if (GetChoreInstance(choreInstanceId) is not { } instance) return null;
+            instance.SkippedDate = null;
             _context.SaveChanges();
             return instance;
         }
@@ -118,7 +156,7 @@ namespace HouseholdManager.Services
 
             var count = _context.ChoreInstances.Where(instance => instance.ChoreId == choreInstance.ChoreId).Count();
 
-            if (count == 0)
+            if (count == 0 && choreInstance.Chore.RecurrenceRule is null)
             {
                 _choreService.DeleteChore(choreInstance.ChoreId);
             }

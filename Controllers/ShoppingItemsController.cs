@@ -1,0 +1,78 @@
+using HouseholdManager.Dtos;
+using HouseholdManager.Services;
+using Microsoft.AspNetCore.Mvc;
+
+namespace HouseholdManager.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ShoppingItemsController : ControllerBase
+    {
+        public ShoppingItemsController(IShoppingItemService shoppingItemService)
+        {
+            _shoppingItemService = shoppingItemService;
+        }
+
+        private readonly IShoppingItemService _shoppingItemService;
+
+        [HttpGet("{shoppingItemId}")]
+        public IActionResult Get(int shoppingItemId)
+        {
+            if (_shoppingItemService.GetShoppingItem(shoppingItemId) is not { } shoppingItem) return NotFound();
+            var result = ShoppingItemDto.Map(shoppingItem);
+            return Ok(result);
+        }
+
+        [HttpGet]
+        public IActionResult GetAll(int householdId)
+        {
+            var result = ShoppingItemDto.MapCollection(_shoppingItemService.GetAllShoppingItems(householdId));
+            return Ok(result);
+        }
+
+        [HttpPost]
+        public IActionResult Create([FromBody] CreateShoppingItemModel model)
+        {
+            if (_shoppingItemService.CreateShoppingItem(model) is not { } newShoppingItem) return NotFound();
+            var result = ShoppingItemDto.Map(newShoppingItem);
+            return Ok(result);
+        }
+
+        [HttpPost("from-recipe/{recipeId}")]
+        public IActionResult AddFromRecipe(int recipeId, [FromBody] AddRecipeToShoppingListModel? model = null)
+        {
+            if (_shoppingItemService.AddFromRecipe(recipeId, model ?? new AddRecipeToShoppingListModel()) is not { } shoppingItems) return NotFound();
+            var result = ShoppingItemDto.MapCollection(shoppingItems);
+            return Ok(result);
+        }
+
+        [HttpPost("{shoppingItemId}")]
+        public IActionResult Update(int shoppingItemId, [FromBody] UpdateShoppingItemModel model)
+        {
+            if (_shoppingItemService.UpdateShoppingItem(shoppingItemId, model) is not { } shoppingItem) return NotFound();
+            var result = ShoppingItemDto.Map(shoppingItem);
+            return Ok(result);
+        }
+
+        [HttpPost("{shoppingItemId}/mark-as-bought")]
+        public IActionResult MarkAsBought(int shoppingItemId)
+        {
+            if (_shoppingItemService.MarkAsBought(shoppingItemId) is not { } shoppingItem) return NotFound();
+            return Ok(ShoppingItemDto.Map(shoppingItem));
+        }
+
+        [HttpPost("{shoppingItemId}/clear-bought-date")]
+        public IActionResult ClearBoughtDate(int shoppingItemId)
+        {
+            if (_shoppingItemService.ClearBoughtDate(shoppingItemId) is not { } shoppingItem) return NotFound();
+            return Ok(ShoppingItemDto.Map(shoppingItem));
+        }
+
+        [HttpDelete("{shoppingItemId}")]
+        public IActionResult Delete(int shoppingItemId)
+        {
+            if (!_shoppingItemService.DeleteShoppingItem(shoppingItemId)) return NotFound();
+            return Ok();
+        }
+    }
+}

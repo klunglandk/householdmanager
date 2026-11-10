@@ -18,6 +18,8 @@ namespace HouseholdManager.Dtos
 
         public Weekdays? Weekdays { get; set; }
 
+        public DateOnly? StartDate { get; set; }
+
         public static ChoreDto Map(Chore chore)
         {
             var result = new ChoreDto
@@ -28,7 +30,8 @@ namespace HouseholdManager.Dtos
                 UserId = chore.UserId,
                 Frequency = chore.RecurrenceRule?.Frequency,
                 Interval = chore.RecurrenceRule?.Interval,
-                Weekdays = chore.RecurrenceRule?.Weekdays
+                Weekdays = chore.RecurrenceRule?.Weekdays,
+                StartDate = chore.RecurrenceRule?.StartDate
             };
             return result;
         }

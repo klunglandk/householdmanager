@@ -12,6 +12,10 @@ namespace HouseholdManager.Dtos
 
         public bool IsDone => DoneDate != null;
 
+        public DateTimeOffset? SkippedDate { get; set; }
+
+        public bool IsSkipped => SkippedDate != null;
+
         public int ChoreId { get; set; }
 
         public string ChoreName { get; set; } = string.Empty;
@@ -24,6 +28,8 @@ namespace HouseholdManager.Dtos
 
         public Weekdays? Weekdays { get; set; }
 
+        public DateOnly? StartDate { get; set; }
+
         public static ChoreInstanceDto Map(ChoreInstance choreInstance)
         {
             var result = new ChoreInstanceDto()
@@ -31,12 +37,14 @@ namespace HouseholdManager.Dtos
                 Id = choreInstance.Id,
                 PeriodStartDate = choreInstance.PeriodStartDate,
                 DoneDate = choreInstance.DoneDate,
+                SkippedDate = choreInstance.SkippedDate,
                 ChoreId = choreInstance.ChoreId,
                 ChoreName = choreInstance.Chore.Name,
                 UserId = choreInstance.Chore.UserId,
                 Frequency = choreInstance.Chore.RecurrenceRule?.Frequency,
                 Interval = choreInstance.Chore.RecurrenceRule?.Interval,
-                Weekdays = choreInstance.Chore.RecurrenceRule?.Weekdays
+                Weekdays = choreInstance.Chore.RecurrenceRule?.Weekdays,
+                StartDate = choreInstance.Chore.RecurrenceRule?.StartDate
             };
             return result;
         }

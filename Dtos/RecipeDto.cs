@@ -12,7 +12,7 @@ namespace HouseholdManager.Dtos
 
         public int? Servings { get; set; }
 
-        public string? ImagePath { get; set; }
+        public bool HasImage { get; set; }
 
         public int HouseholdId { get; set; }
 
@@ -26,7 +26,7 @@ namespace HouseholdManager.Dtos
                 Name = recipe.Name,
                 Instructions = recipe.Instructions,
                 Servings = recipe.Servings,
-                ImagePath = recipe.ImagePath,
+                HasImage = recipe.ImagePath != null,
                 HouseholdId = recipe.HouseholdId,
                 Ingredients = IngredientDto.MapCollection(recipe.Ingredients).ToList()
             };

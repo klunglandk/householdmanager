@@ -15,9 +15,9 @@ namespace HouseholdManager.Database.DataModels
         public Chore Chore { get; set; } = default!;
         public int ChoreId { get; set; }
 
-        public ItemInstanceDto Map()
+        public ChoreInstanceDto Map()
         {
-            return ItemInstanceDto.Map(this);
+            return ChoreInstanceDto.Map(this);
         }
     }
 }

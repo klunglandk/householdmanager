@@ -6,9 +6,9 @@ namespace HouseholdManager.Services
 {
     public interface IRecurrenceRuleService
     {
-        void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency, int? interval);
+        void CreateRecurrenceRule(Chore chore, FrequencyType? frequency, int? interval, Weekdays? weekdays);
 
-        void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency, int? interval);
+        void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequency, int? interval, Weekdays? weekdays);
 
         void DeleteRecurrenceRule(RecurrenceRule rule);
     }
@@ -21,22 +21,22 @@ namespace HouseholdManager.Services
 
         private readonly HouseholdContext _context;
 
-        public void CreateRecurrenceRule(Item item, FrequencyType? frequencyType, int? frequency, int? interval)
+        public void CreateRecurrenceRule(Chore chore, FrequencyType? frequency, int? interval, Weekdays? weekdays)
         {
-            if (frequencyType is { } type)
+            if (frequency is { } type)
             {
-                var newRule = new RecurrenceRule { FrequencyType = type, Frequency = frequency ?? 1, Interval = interval ?? 1 };
-                item.RecurrenceRule = newRule;
+                var newRule = new RecurrenceRule { Frequency = type, Interval = interval ?? 1, Weekdays = weekdays ?? Weekdays.None };
+                chore.RecurrenceRule = newRule;
             }
         }
 
-        public void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequencyType, int? frequency, int? interval)
+        public void UpdateRecurrenceRule(RecurrenceRule rule, FrequencyType? frequency, int? interval, Weekdays? weekdays)
         {
-            if (frequencyType is { } type)
+            if (frequency is { } type)
             {
-                rule.FrequencyType = type;
-                rule.Frequency = frequency ?? rule.Frequency;
+                rule.Frequency = type;
                 rule.Interval = interval ?? rule.Interval;
+                rule.Weekdays = weekdays ?? rule.Weekdays;
             }
         }
 

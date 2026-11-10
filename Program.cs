@@ -21,18 +21,21 @@ namespace HouseholdManager
             {
                 options.UseSeeding((x, v) =>
                 {
-                    var newUser = new User { UserName = "Kristine" };
-                    x.Set<ItemCollection>().Add(new ItemCollection { Name = "Test collection", Owner = newUser });
+                    var household = new Household { Name = "Test household" };
+                    x.Set<User>().Add(new User { UserName = "Kristine", Household = household });
                     x.SaveChanges();
                 });
 
                 options.UseInMemoryDatabase("household");
             });
 
-            builder.Services.AddScoped<IItemCollectionService, ItemCollectionService>();
-            builder.Services.AddScoped<IItemInstanceService, ItemInstanceService>();
+            builder.Services.AddScoped<IHouseholdService, HouseholdService>();
+            builder.Services.AddScoped<IChoreService, ChoreService>();
+            builder.Services.AddScoped<IChoreInstanceService, ChoreInstanceService>();
             builder.Services.AddScoped<IRecurrenceRuleService, RecurrenceRuleService>();
-            builder.Services.AddScoped<IItemService, ItemService>();
+            builder.Services.AddScoped<IProductService, ProductService>();
+            builder.Services.AddScoped<IShoppingItemService, ShoppingItemService>();
+            builder.Services.AddScoped<IRecipeService, RecipeService>();
             builder.Services.AddScoped<IUserService, UserService>();
 
             var app = builder.Build();

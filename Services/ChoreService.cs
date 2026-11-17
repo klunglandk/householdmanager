@@ -1,5 +1,6 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Infrastructure;
 using HouseholdManager.Models;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
@@ -10,7 +11,7 @@ namespace HouseholdManager.Services
     {
         Chore? GetChore(int choreId);
 
-        List<Chore> GetAllChores(int householdId, string? userId);
+        List<Chore> GetAllChores(string? userId);
 
         Chore CreateChore(CreateChoreModel model);
 
@@ -18,30 +19,37 @@ namespace HouseholdManager.Services
 
         Chore? UpdateFutureChore(int choreId, UpdateChoreModel model);
 
+        Chore? EndChore(int choreId);
+
         bool DeleteChore(int choreId);
     }
     public class ChoreService : IChoreService
     {
-        public ChoreService(HouseholdContext context, IRecurrenceRuleService recurrenceRuleService, IChoreInstanceGenerator instanceGenerator)
+        public ChoreService(HouseholdContext context, IRecurrenceRuleService recurrenceRuleService, IChoreInstanceGenerator instanceGenerator, ICurrentUser currentUser)
         {
             _context = context;
             _recurrenceRuleService = recurrenceRuleService;
             _instanceGenerator = instanceGenerator;
+            _currentUser = currentUser;
         }
         private readonly HouseholdContext _context;
         private readonly IRecurrenceRuleService _recurrenceRuleService;
         private readonly IChoreInstanceGenerator _instanceGenerator;
+        private readonly ICurrentUser _currentUser;
 
         public Chore? GetChore(int choreId)
         {
             return _context.Chores
                 .Include(chore => chore.RecurrenceRule)
+                .Where(chore => chore.HouseholdId == _currentUser.HouseholdId)
+                .Where(chore => _currentUser.IsAdmin || chore.UserId == _currentUser.UserId)
                 .FirstOrDefault(chore => chore.Id == choreId);
         }
 
-        public List<Chore> GetAllChores(int householdId, string? userId)
+        public List<Chore> GetAllChores(string? userId)
         {
-            var query = _context.Chores.Where(chore => chore.HouseholdId == householdId);
+            var query = _context.Chores.Where(chore => chore.HouseholdId == _currentUser.HouseholdId);
+            if (!_currentUser.IsAdmin) userId = _currentUser.UserId;
             if (userId is { } id) query = query.Where(chore => chore.UserId == id);
 
             return query
@@ -51,7 +59,8 @@ namespace HouseholdManager.Services
 
         public Chore CreateChore(CreateChoreModel model)
         {
-            var newChore = new Chore { Name = model.Name, HouseholdId = model.HouseholdId, UserId = model.UserId };
+            EnsureUserInHousehold(model.UserId);
+            var newChore = new Chore { Name = model.Name, HouseholdId = _currentUser.HouseholdId, UserId = model.UserId };
             _recurrenceRuleService.CreateRecurrenceRule(newChore, model.Frequency, model.Interval, model.Weekdays, model.StartDate);
             var result = _context.Chores.Add(newChore);
             _context.SaveChanges();
@@ -62,6 +71,7 @@ namespace HouseholdManager.Services
         public Chore? UpdateChore(int choreId, UpdateChoreModel model)
         {
             if (GetChore(choreId) is not { } chore) return null;
+            EnsureUserInHousehold(model.UserId);
             if (model.Name is { } name) chore.Name = name;
             if (model.UserId is { } userId) chore.UserId = userId;
             if (model.Frequency is { } frequency)
@@ -86,6 +96,7 @@ namespace HouseholdManager.Services
         {
             if (GetChore(choreId) is not { } chore) return null;
             if (chore.RecurrenceRule is not { } rule) return null;
+            EnsureUserInHousehold(model.UserId);
 
             var nameChanged = model.Name is { } name && name != chore.Name;
             var userChanged = model.UserId is { } userId && userId != chore.UserId;
@@ -124,6 +135,18 @@ namespace HouseholdManager.Services
             return newChore;
         }
 
+        public Chore? EndChore(int choreId)
+        {
+            if (GetChore(choreId) is not { } chore) return null;
+            if (chore.RecurrenceRule is not { } rule) return chore;
+
+            var firstDateToRemove = _instanceGenerator.GetToday().AddDays(1);
+            _recurrenceRuleService.DeleteRecurrenceRule(rule);
+            _instanceGenerator.StageRemovalOfOpenInstances(chore, firstDateToRemove);
+            _context.SaveChanges();
+            return chore;
+        }
+
         public bool DeleteChore(int choreId)
         {
             if (GetChore(choreId) is not { } chore) return false;
@@ -132,6 +155,15 @@ namespace HouseholdManager.Services
             _context.SaveChanges();
             return true;
         }
+
+        private void EnsureUserInHousehold(string? userId)
+        {
+            if (userId is null) return;
+            if (!_context.Users.Any(user => user.Id == userId && user.HouseholdId == _currentUser.HouseholdId))
+            {
+                throw new ValidationException("The user does not belong to your household.");
+            }
+        }
     }
 
     public class CreateChoreModel : RecurrenceInputModel
@@ -139,10 +171,7 @@ namespace HouseholdManager.Services
         [Required, MinLength(2), MaxLength(128)]
         public required string Name { get; set; }
 
-        public required int HouseholdId { get; set; }
-
         public string? UserId { get; set; }
-
     }
 
     public class UpdateChoreModel : RecurrenceInputModel

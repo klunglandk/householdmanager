@@ -1,5 +1,6 @@
 using HouseholdManager.Dtos;
 using HouseholdManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
@@ -24,13 +25,14 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId, DateTimeOffset? from, DateTimeOffset? to, string? userId)
+        public IActionResult GetAll(DateTimeOffset? from, DateTimeOffset? to, string? userId, bool onlyOpen)
         {
-            var result = ChoreInstanceDto.MapCollection(_choreInstanceService.GetAllChoreInstances(householdId, from, to, userId));
+            var result = ChoreInstanceDto.MapCollection(_choreInstanceService.GetAllChoreInstances(from, to, userId, onlyOpen));
             return Ok(result);
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public IActionResult Create([FromBody] CreateChoreInstanceModel model)
         {
             if (_choreInstanceService.CreateChoreInstance(model) is not { } newChoreInstance) return NotFound();
@@ -39,6 +41,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("new-chore")]
+        [Authorize(Roles = "admin")]
         public IActionResult CreateWithNewChore([FromBody] CreateChoreInstanceWithNewChoreModel model)
         {
             var newChoreInstance = _choreInstanceService.CreateChoreInstanceWithNewChore(model);
@@ -61,6 +64,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{choreInstanceId}/mark-as-skipped")]
+        [Authorize(Roles = "admin")]
         public IActionResult MarkAsSkipped(int choreInstanceId)
         {
             if (_choreInstanceService.MarkAsSkipped(choreInstanceId) is not { } choreInstance) return NotFound();
@@ -68,6 +72,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{choreInstanceId}/clear-skipped-date")]
+        [Authorize(Roles = "admin")]
         public IActionResult ClearSkippedDate(int choreInstanceId)
         {
             if (_choreInstanceService.ClearSkippedDate(choreInstanceId) is not { } choreInstance) return NotFound();
@@ -75,6 +80,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpDelete("{choreInstanceId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Delete(int choreInstanceId)
         {
             if (!_choreInstanceService.DeleteChoreInstance(choreInstanceId)) return NotFound();

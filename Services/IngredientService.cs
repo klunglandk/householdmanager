@@ -1,5 +1,6 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
@@ -20,33 +21,37 @@ namespace HouseholdManager.Services
 
     public class IngredientService : IIngredientService
     {
-        public IngredientService(HouseholdContext context, IProductService productService)
+        public IngredientService(HouseholdContext context, IProductService productService, ICurrentUser currentUser)
         {
             _context = context;
             _productService = productService;
+            _currentUser = currentUser;
         }
 
         private readonly HouseholdContext _context;
         private readonly IProductService _productService;
+        private readonly ICurrentUser _currentUser;
 
         public Ingredient? GetIngredient(int ingredientId)
         {
             return _context.Ingredients
                 .Include(ingredient => ingredient.Product)
-                .FirstOrDefault(ingredient => ingredient.Id == ingredientId);
+                .FirstOrDefault(ingredient => ingredient.Id == ingredientId
+                    && ingredient.Recipe.HouseholdId == _currentUser.HouseholdId);
         }
 
         public List<Ingredient> GetAllIngredients(int recipeId)
         {
             return _context.Ingredients
                 .Include(ingredient => ingredient.Product)
-                .Where(ingredient => ingredient.RecipeId == recipeId)
+                .Where(ingredient => ingredient.RecipeId == recipeId
+                    && ingredient.Recipe.HouseholdId == _currentUser.HouseholdId)
                 .ToList();
         }
 
         public Ingredient? CreateIngredient(CreateIngredientModel model)
         {
-            var recipe = _context.Recipes.FirstOrDefault(r => r.Id == model.RecipeId);
+            var recipe = _context.Recipes.FirstOrDefault(r => r.Id == model.RecipeId && r.HouseholdId == _currentUser.HouseholdId);
             if (recipe is null) return null;
             if (_productService.GetProduct(model.ProductId) is not { } product) return null;
 

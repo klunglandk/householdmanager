@@ -8,9 +8,9 @@ namespace HouseholdManager.Services
     {
         SchoolPlan? GetSchoolPlan(int schoolPlanId);
 
-        List<SchoolPlan> GetAllSchoolPlans(int householdId, DateOnly? weekDate);
+        List<SchoolPlan> GetAllSchoolPlans(DateOnly? weekDate);
 
-        Task<SchoolPlan?> CreateSchoolPlanAsync(int householdId, DateOnly weekDate, string originalFileName, Stream content, CancellationToken cancellationToken);
+        Task<SchoolPlan> CreateSchoolPlanAsync(DateOnly weekDate, string originalFileName, Stream content, CancellationToken cancellationToken);
 
         Stream? OpenFile(SchoolPlan schoolPlan);
 
@@ -19,23 +19,25 @@ namespace HouseholdManager.Services
 
     public class SchoolPlanService : ISchoolPlanService
     {
-        public SchoolPlanService(HouseholdContext context, IFileStorage fileStorage)
+        public SchoolPlanService(HouseholdContext context, IFileStorage fileStorage, ICurrentUser currentUser)
         {
             _context = context;
             _fileStorage = fileStorage;
+            _currentUser = currentUser;
         }
 
         private readonly HouseholdContext _context;
         private readonly IFileStorage _fileStorage;
+        private readonly ICurrentUser _currentUser;
 
         public SchoolPlan? GetSchoolPlan(int schoolPlanId)
         {
-            return _context.SchoolPlans.FirstOrDefault(plan => plan.Id == schoolPlanId);
+            return _context.SchoolPlans.FirstOrDefault(plan => plan.Id == schoolPlanId && plan.HouseholdId == _currentUser.HouseholdId);
         }
 
-        public List<SchoolPlan> GetAllSchoolPlans(int householdId, DateOnly? weekDate)
+        public List<SchoolPlan> GetAllSchoolPlans(DateOnly? weekDate)
         {
-            var query = _context.SchoolPlans.Where(plan => plan.HouseholdId == householdId);
+            var query = _context.SchoolPlans.Where(plan => plan.HouseholdId == _currentUser.HouseholdId);
             if (weekDate is { } date)
             {
                 var weekStartDate = GetMondayOfWeek(date);
@@ -48,15 +50,13 @@ namespace HouseholdManager.Services
                 .ToList();
         }
 
-        public async Task<SchoolPlan?> CreateSchoolPlanAsync(int householdId, DateOnly weekDate, string originalFileName, Stream content, CancellationToken cancellationToken)
+        public async Task<SchoolPlan> CreateSchoolPlanAsync(DateOnly weekDate, string originalFileName, Stream content, CancellationToken cancellationToken)
         {
-            if (!_context.Households.Any(household => household.Id == householdId)) return null;
-
             var storedFileName = await _fileStorage.SaveAsync(content, AllowedFileKind.ImageOrPdf, cancellationToken);
 
             var newPlan = new SchoolPlan
             {
-                HouseholdId = householdId,
+                HouseholdId = _currentUser.HouseholdId,
                 WeekStartDate = GetMondayOfWeek(weekDate),
                 StoredFileName = storedFileName,
                 OriginalFileName = GetSafeFileName(originalFileName),

@@ -1,6 +1,7 @@
 using HouseholdManager.Dtos;
 using HouseholdManager.Infrastructure;
 using HouseholdManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
@@ -25,13 +26,14 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId)
+        public IActionResult GetAll()
         {
-            var result = RecipeDto.MapCollection(_recipeService.GetAllRecipes(householdId));
+            var result = RecipeDto.MapCollection(_recipeService.GetAllRecipes());
             return Ok(result);
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public IActionResult Create([FromBody] CreateRecipeModel model)
         {
             var newRecipe = _recipeService.CreateRecipe(model);
@@ -40,6 +42,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{recipeId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Update(int recipeId, [FromBody] UpdateRecipeModel model)
         {
             if (_recipeService.UpdateRecipe(recipeId, model) is not { } recipe) return NotFound();
@@ -48,6 +51,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpDelete("{recipeId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Delete(int recipeId)
         {
             if (!_recipeService.DeleteRecipe(recipeId)) return NotFound();
@@ -65,6 +69,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{recipeId}/image")]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> UploadImage(int recipeId, IFormFile file, CancellationToken cancellationToken)
         {
             await using var stream = file.OpenReadStream();
@@ -74,6 +79,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpDelete("{recipeId}/image")]
+        [Authorize(Roles = "admin")]
         public IActionResult DeleteImage(int recipeId)
         {
             if (_recipeService.RemoveImage(recipeId) is not { } recipe) return NotFound();

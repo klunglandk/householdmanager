@@ -1,5 +1,6 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.DataAnnotations;
 
@@ -9,7 +10,7 @@ namespace HouseholdManager.Services
     {
         ShoppingItem? GetShoppingItem(int shoppingItemId);
 
-        List<ShoppingItem> GetAllShoppingItems(int householdId);
+        List<ShoppingItem> GetAllShoppingItems();
 
         ShoppingItem? CreateShoppingItem(CreateShoppingItemModel model);
 
@@ -22,33 +23,38 @@ namespace HouseholdManager.Services
         ShoppingItem? ClearBoughtDate(int shoppingItemId);
 
         bool DeleteShoppingItem(int shoppingItemId);
+
+        int DeleteBoughtShoppingItems();
     }
 
     public class ShoppingItemService : IShoppingItemService
     {
-        public ShoppingItemService(HouseholdContext context, IProductService productService, IRecipeService recipeService)
+        public ShoppingItemService(HouseholdContext context, IProductService productService, IRecipeService recipeService, ICurrentUser currentUser)
         {
             _context = context;
             _productService = productService;
             _recipeService = recipeService;
+            _currentUser = currentUser;
         }
 
         private readonly HouseholdContext _context;
         private readonly IProductService _productService;
         private readonly IRecipeService _recipeService;
+        private readonly ICurrentUser _currentUser;
 
         public ShoppingItem? GetShoppingItem(int shoppingItemId)
         {
             return _context.ShoppingItems
                 .Include(item => item.Product)
-                .FirstOrDefault(item => item.Id == shoppingItemId);
+                .FirstOrDefault(item => item.Id == shoppingItemId
+                    && item.Product.HouseholdId == _currentUser.HouseholdId);
         }
 
-        public List<ShoppingItem> GetAllShoppingItems(int householdId)
+        public List<ShoppingItem> GetAllShoppingItems()
         {
             return _context.ShoppingItems
                 .Include(item => item.Product)
-                .Where(item => item.Product.HouseholdId == householdId)
+                .Where(item => item.Product.HouseholdId == _currentUser.HouseholdId)
                 .ToList();
         }
 
@@ -130,11 +136,24 @@ namespace HouseholdManager.Services
             return true;
         }
 
+        public int DeleteBoughtShoppingItems()
+        {
+            var boughtItems = _context.ShoppingItems
+                .Where(item => item.BoughtDate != null && item.Product.HouseholdId == _currentUser.HouseholdId)
+                .ToList();
+
+            _context.ShoppingItems.RemoveRange(boughtItems);
+            _context.SaveChanges();
+            return boughtItems.Count;
+        }
+
         private List<ShoppingItem> GetUnboughtItems(List<int> productIds)
         {
             return _context.ShoppingItems
                 .Include(item => item.Product)
-                .Where(item => productIds.Contains(item.ProductId) && item.BoughtDate == null)
+                .Where(item => productIds.Contains(item.ProductId)
+                    && item.BoughtDate == null
+                    && item.Product.HouseholdId == _currentUser.HouseholdId)
                 .ToList();
         }
 

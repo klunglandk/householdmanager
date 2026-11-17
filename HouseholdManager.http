@@ -1,28 +1,112 @@
 @baseUrl = http://localhost:5260
+@adminUserName = {{$dotenv ADMIN_USER_NAME}}
+@adminPassword = {{$dotenv ADMIN_PASSWORD}}
+@childUserName = Child
+@childPassword = Child12345!
+@token = {{login.response.body.$.token}}
+@childToken = {{childLogin.response.body.$.token}}
+@childId = {{createChild.response.body.$.id}}
 
+# The admin login is read from the git-ignored file .env (copy .env.example to .env and fill it in). Never write the real values in this file.
+# childUserName and childPassword are throwaway test values for the in-memory database.
 # Run top to bottom against a freshly started app (the in-memory database is reset on every start).
-# The data seeded at startup is household 1 with user 1. Ids in the comments assume a fresh start.
+# The seeded data is household 1 and the admin user. Ids in the comments assume a fresh start.
 # Dates assume that today is 2026-11-10 (a Tuesday). Adjust the dates if you run it on another day.
 # Enums are numbers. FrequencyType: Daily 0, Weekly 1, Monthly 2, Yearly 3.
 # Weekdays are flags: Monday 1, Tuesday 2, Wednesday 4, Thursday 8, Friday 16, Saturday 32, Sunday 64.
 # MeasurementUnit: Gram 0, Kilogram 1, Milliliter 2, Deciliter 3, Liter 4, Piece 5, Teaspoon 6, Tablespoon 7, Cup 8.
 
+# Auth
+### Without a token, should return 401
+
+GET {{baseUrl}}/api/Chores
+
+### Logs in as the admin, returns token and refreshToken
+# @name login
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{adminUserName}}",
+  "password": "{{adminPassword}}"
+}
+
+### Wrong password, should return 401
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{adminUserName}}",
+  "password": "wrong"
+}
+
+### Creates the child account, returns the id of the child
+# @name createChild
+POST {{baseUrl}}/api/Users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "{{childPassword}}",
+  "role": "child"
+}
+
+### The same user name again, should return 400
+
+POST {{baseUrl}}/api/Users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "{{childPassword}}",
+  "role": "child"
+}
+
+### Invalid role, should return 400
+
+POST {{baseUrl}}/api/Users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userName": "Someone",
+  "password": "Someone12345!",
+  "role": "banana"
+}
+
+### Logs in as the child
+# @name childLogin
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "{{childPassword}}"
+}
+
 # Household
 ### Gets all households, should contain the seeded household 1
 
 GET {{baseUrl}}/api/Households
+Authorization: Bearer {{token}}
 
 ### Gets the household with id 1
 
 GET {{baseUrl}}/api/Households/1
+Authorization: Bearer {{token}}
 
 ### Gets the household with id 999, should return 404
 
 GET {{baseUrl}}/api/Households/999
+Authorization: Bearer {{token}}
 
 ### Adds a new household, gets id 2
 
 POST {{baseUrl}}/api/Households
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -32,6 +116,7 @@ Content-Type: application/json
 ### Name with only one character, should return 400
 
 POST {{baseUrl}}/api/Households
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -41,6 +126,7 @@ Content-Type: application/json
 ### Updates household name for id 2
 
 POST {{baseUrl}}/api/Households/2
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -50,6 +136,7 @@ Content-Type: application/json
 ### Update with no changes, should return 200
 
 POST {{baseUrl}}/api/Households/2
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {}
@@ -57,73 +144,78 @@ Content-Type: application/json
 ### Deletes household 2
 
 DELETE {{baseUrl}}/api/Households/2
+Authorization: Bearer {{token}}
 
 ### Household 2 is gone, should return 404
 
 GET {{baseUrl}}/api/Households/2
+Authorization: Bearer {{token}}
 
 # Product
 ### Creates Milk, gets id 1
 
 POST {{baseUrl}}/api/Products
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "Milk",
-  "householdId": 1
+  "name": "Milk"
 }
 
 ### Creates Flour, gets id 2
 
 POST {{baseUrl}}/api/Products
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "Flour",
-  "householdId": 1
+  "name": "Flour"
 }
 
 ### Creates Salt, gets id 3
 
 POST {{baseUrl}}/api/Products
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "Salt",
-  "householdId": 1
+  "name": "Salt"
 }
 
 ### Creates Tomatoes, gets id 4
 
 POST {{baseUrl}}/api/Products
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "Tomatoes",
-  "householdId": 1
+  "name": "Tomatoes"
 }
 
 ### Creates a product that is deleted again below, gets id 5
 
 POST {{baseUrl}}/api/Products
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "Temporary product",
-  "householdId": 1
+  "name": "Temporary product"
 }
 
 ### Gets all products for household 1
 
-GET {{baseUrl}}/api/Products?householdId=1
+GET {{baseUrl}}/api/Products
+Authorization: Bearer {{token}}
 
 ### Gets product 1
 
 GET {{baseUrl}}/api/Products/1
+Authorization: Bearer {{token}}
 
 ### Updates the name of product 5
 
 POST {{baseUrl}}/api/Products/5
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -133,61 +225,67 @@ Content-Type: application/json
 ### Deletes product 5
 
 DELETE {{baseUrl}}/api/Products/5
+Authorization: Bearer {{token}}
 
 ### Product 5 is gone, should return 404
 
 GET {{baseUrl}}/api/Products/5
+Authorization: Bearer {{token}}
 
 # Recipe
 ### Creates the recipe Pancakes with 4 servings, gets id 1
 
 POST {{baseUrl}}/api/Recipes
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Pancakes",
   "instructions": "Mix and fry.",
-  "servings": 4,
-  "householdId": 1
+  "servings": 4
 }
 
 ### Creates the recipe Waffles with 2 servings, gets id 2
 
 POST {{baseUrl}}/api/Recipes
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Waffles",
   "instructions": "Mix and press.",
-  "servings": 2,
-  "householdId": 1
+  "servings": 2
 }
 
 ### Creates a recipe that is deleted again below, gets id 3
 
 POST {{baseUrl}}/api/Recipes
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "name": "Temporary recipe",
-  "householdId": 1
+  "name": "Temporary recipe"
 }
 
 ### Gets all recipes for household 1
 
-GET {{baseUrl}}/api/Recipes?householdId=1
+GET {{baseUrl}}/api/Recipes
+Authorization: Bearer {{token}}
 
 ### Gets recipe 1
 
 GET {{baseUrl}}/api/Recipes/1
+Authorization: Bearer {{token}}
 
 ### Gets recipe 999, should return 404
 
 GET {{baseUrl}}/api/Recipes/999
+Authorization: Bearer {{token}}
 
 ### Updates the instructions of recipe 1
 
 POST {{baseUrl}}/api/Recipes/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -197,6 +295,7 @@ Content-Type: application/json
 ### Servings of 0, should return 400
 
 POST {{baseUrl}}/api/Recipes/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -206,11 +305,13 @@ Content-Type: application/json
 ### Deletes recipe 3
 
 DELETE {{baseUrl}}/api/Recipes/3
+Authorization: Bearer {{token}}
 
 # Ingredient
 ### Pancakes: 5 dl milk, gets ingredient id 1
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -223,6 +324,7 @@ Content-Type: application/json
 ### Pancakes: 300 g flour, gets id 2
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -235,6 +337,7 @@ Content-Type: application/json
 ### Pancakes: 1 teaspoon salt, gets id 3
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -247,6 +350,7 @@ Content-Type: application/json
 ### Waffles: 5 dl milk, gets id 4
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -259,6 +363,7 @@ Content-Type: application/json
 ### Waffles: 800 g flour, gets id 5
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -271,6 +376,7 @@ Content-Type: application/json
 ### Waffles: 2 teaspoons salt, gets id 6
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -283,6 +389,7 @@ Content-Type: application/json
 ### Pancakes: 2 tomatoes, gets id 7 and is changed and deleted below
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -295,6 +402,7 @@ Content-Type: application/json
 ### Ingredient for a recipe that doesn't exist, should return 404
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -307,6 +415,7 @@ Content-Type: application/json
 ### Ingredient with a product that doesn't exist, should return 404
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -319,6 +428,7 @@ Content-Type: application/json
 ### Amount of 0, should return 400
 
 POST {{baseUrl}}/api/Ingredients
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -331,14 +441,17 @@ Content-Type: application/json
 ### Gets all ingredients for recipe 1
 
 GET {{baseUrl}}/api/Ingredients?recipeId=1
+Authorization: Bearer {{token}}
 
 ### Gets ingredient 1
 
 GET {{baseUrl}}/api/Ingredients/1
+Authorization: Bearer {{token}}
 
 ### Changes ingredient 7 to 3 tomatoes
 
 POST {{baseUrl}}/api/Ingredients/7
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -348,15 +461,18 @@ Content-Type: application/json
 ### Deletes ingredient 7
 
 DELETE {{baseUrl}}/api/Ingredients/7
+Authorization: Bearer {{token}}
 
 ### Ingredient 7 is gone, should return 404
 
 GET {{baseUrl}}/api/Ingredients/7
+Authorization: Bearer {{token}}
 
 # ShoppingItem
 ### Adds 2 dl milk, should be stored as 200 ml (shopping item 1)
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -368,6 +484,7 @@ Content-Type: application/json
 ### Adds 3 dl milk, should merge into item 1 and become 0.5 liter
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -379,6 +496,7 @@ Content-Type: application/json
 ### Adds 500 ml milk, should merge into item 1 and become 1 liter
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -390,6 +508,7 @@ Content-Type: application/json
 ### Adds 2400 g flour, should be stored as 2.4 kg (shopping item 2)
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -401,6 +520,7 @@ Content-Type: application/json
 ### Adds 1 teaspoon salt (shopping item 3)
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -412,6 +532,7 @@ Content-Type: application/json
 ### Adds 2 teaspoons salt, should merge into item 3 and become 3 teaspoons
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -423,6 +544,7 @@ Content-Type: application/json
 ### Adds 1 piece milk, can't be combined with volume so it becomes a separate item 4
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -434,6 +556,7 @@ Content-Type: application/json
 ### Product that doesn't exist, should return 404
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -445,6 +568,7 @@ Content-Type: application/json
 ### Amount of 0, should return 400
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -455,15 +579,18 @@ Content-Type: application/json
 
 ### Gets all shopping items for household 1
 
-GET {{baseUrl}}/api/ShoppingItems?householdId=1
+GET {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 
 ### Gets shopping item 1
 
 GET {{baseUrl}}/api/ShoppingItems/1
+Authorization: Bearer {{token}}
 
 ### Changes item 4 to 2 pieces
 
 POST {{baseUrl}}/api/ShoppingItems/4
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -473,14 +600,17 @@ Content-Type: application/json
 ### Deletes item 4
 
 DELETE {{baseUrl}}/api/ShoppingItems/4
+Authorization: Bearer {{token}}
 
 ### Marks item 1 as bought
 
 POST {{baseUrl}}/api/ShoppingItems/1/mark-as-bought
+Authorization: Bearer {{token}}
 
 ### Adds 1 liter milk, bought items are not merged so this becomes a new item 5
 
 POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -492,14 +622,17 @@ Content-Type: application/json
 ### Deletes item 5
 
 DELETE {{baseUrl}}/api/ShoppingItems/5
+Authorization: Bearer {{token}}
 
 ### Clears the bought date on item 1, state is now: milk 1 liter, flour 2.4 kg, salt 3 teaspoons
 
 POST {{baseUrl}}/api/ShoppingItems/1/clear-bought-date
+Authorization: Bearer {{token}}
 
 ### Adds the whole Pancakes recipe, should give milk 1.5 liter, flour 2.7 kg, salt 4 teaspoons
 
 POST {{baseUrl}}/api/ShoppingItems/from-recipe/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {}
@@ -507,6 +640,7 @@ Content-Type: application/json
 ### Adds Pancakes for 8 servings (4 in the recipe, so double), should give milk 2.5 liter, flour 3.3 kg, salt 6 teaspoons
 
 POST {{baseUrl}}/api/ShoppingItems/from-recipe/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -516,6 +650,7 @@ Content-Type: application/json
 ### Adds only ingredient 2 (flour) from Pancakes, should give flour 3.6 kg
 
 POST {{baseUrl}}/api/ShoppingItems/from-recipe/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -525,6 +660,7 @@ Content-Type: application/json
 ### Adds Waffles for 1 serving (2 in the recipe, so half), should give milk 2.75 liter, flour 4 kg, salt 7 teaspoons
 
 POST {{baseUrl}}/api/ShoppingItems/from-recipe/2
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -534,6 +670,7 @@ Content-Type: application/json
 ### Ingredient that doesn't belong to the recipe, should return 404
 
 POST {{baseUrl}}/api/ShoppingItems/from-recipe/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -543,6 +680,7 @@ Content-Type: application/json
 ### Recipe that doesn't exist, should return 404
 
 POST {{baseUrl}}/api/ShoppingItems/from-recipe/999
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {}
@@ -550,6 +688,7 @@ Content-Type: application/json
 ### Servings of 0, should return 400
 
 POST {{baseUrl}}/api/ShoppingItems/from-recipe/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -558,17 +697,18 @@ Content-Type: application/json
 
 ### Gets all shopping items, should be 3 items
 
-GET {{baseUrl}}/api/ShoppingItems?householdId=1
+GET {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{token}}
 
 # Chore validation
 ### Weekly rule without weekdays, should return 400
 
 POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Invalid chore",
-  "householdId": 1,
   "frequency": 1,
   "periodStartDate": "2026-11-10T00:00:00+01:00"
 }
@@ -576,11 +716,11 @@ Content-Type: application/json
 ### Weekdays on a monthly rule, should return 400
 
 POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Invalid chore",
-  "householdId": 1,
   "frequency": 2,
   "weekdays": 1,
   "periodStartDate": "2026-11-10T00:00:00+01:00"
@@ -589,11 +729,11 @@ Content-Type: application/json
 ### Interval of 0, should return 400
 
 POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Invalid chore",
-  "householdId": 1,
   "frequency": 0,
   "interval": 0,
   "periodStartDate": "2026-11-10T00:00:00+01:00"
@@ -602,11 +742,11 @@ Content-Type: application/json
 ### Weekdays without frequency, should return 400
 
 POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Invalid chore",
-  "householdId": 1,
   "weekdays": 1,
   "periodStartDate": "2026-11-10T00:00:00+01:00"
 }
@@ -615,22 +755,22 @@ Content-Type: application/json
 ### Creates a one-off chore without a rule, gets chore 1 and instance 1
 
 POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Mop the floors",
-  "householdId": 1,
   "periodStartDate": "2026-11-10T00:00:00+01:00"
 }
 
 ### Vacuum every Monday and Thursday (9), chore 2. The instance on 12 Nov is created by hand, the rest is generated up to 4 weeks ahead
 
 POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Vacuum",
-  "householdId": 1,
   "frequency": 1,
   "weekdays": 9,
   "startDate": "2026-11-09",
@@ -640,11 +780,11 @@ Content-Type: application/json
 ### Change the sheets every second Sunday (64), chore 3. Should give 15 Nov and 29 Nov
 
 POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Change the sheets",
-  "householdId": 1,
   "frequency": 1,
   "interval": 2,
   "weekdays": 64,
@@ -655,11 +795,11 @@ Content-Type: application/json
 ### Pay the rent on the 31st every month, chore 4. November has 30 days, so it falls on 30 Nov
 
 POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Pay the rent",
-  "householdId": 1,
   "frequency": 2,
   "startDate": "2026-10-31",
   "periodStartDate": "2026-11-30T00:00:00+01:00"
@@ -667,31 +807,38 @@ Content-Type: application/json
 
 ### Gets all chores for household 1
 
-GET {{baseUrl}}/api/Chores?householdId=1
+GET {{baseUrl}}/api/Chores
+Authorization: Bearer {{token}}
 
 ### Gets chore 2
 
 GET {{baseUrl}}/api/Chores/2
+Authorization: Bearer {{token}}
 
 ### Gets chore 999, should return 404
 
 GET {{baseUrl}}/api/Chores/999
+Authorization: Bearer {{token}}
 
 ### Gets all instances for household 1
 
-GET {{baseUrl}}/api/ChoreInstances?householdId=1
+GET {{baseUrl}}/api/ChoreInstances
+Authorization: Bearer {{token}}
 
 ### Gets the instances for the week 9 Nov to 16 Nov (to is not included). Note that + in the time zone must be written as %2B
 
-GET {{baseUrl}}/api/ChoreInstances?householdId=1&from=2026-11-09T00:00:00%2B01:00&to=2026-11-16T00:00:00%2B01:00
+GET {{baseUrl}}/api/ChoreInstances?from=2026-11-09T00:00:00%2B01:00&to=2026-11-16T00:00:00%2B01:00
+Authorization: Bearer {{token}}
 
 ### Gets instance 2
 
 GET {{baseUrl}}/api/ChoreInstances/2
+Authorization: Bearer {{token}}
 
 ### Instance for a chore that doesn't exist, should return 404
 
 POST {{baseUrl}}/api/ChoreInstances
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -702,6 +849,7 @@ Content-Type: application/json
 ### Creates an extra instance for chore 1
 
 POST {{baseUrl}}/api/ChoreInstances
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -712,60 +860,72 @@ Content-Type: application/json
 ### Marks instance 1 as done
 
 POST {{baseUrl}}/api/ChoreInstances/1/mark-as-done
+Authorization: Bearer {{token}}
 
 ### Clears the done date on instance 1
 
 POST {{baseUrl}}/api/ChoreInstances/1/clear-done-date
+Authorization: Bearer {{token}}
 
 ### Skips instance 3 (Vacuum on 16 Nov). It stays in the list with isSkipped true and is not generated again
 
 POST {{baseUrl}}/api/ChoreInstances/3/mark-as-skipped
+Authorization: Bearer {{token}}
 
 ### Skips instance 4 and then clears it again
 
 POST {{baseUrl}}/api/ChoreInstances/4/mark-as-skipped
+Authorization: Bearer {{token}}
 
 ###
 
 POST {{baseUrl}}/api/ChoreInstances/4/clear-skipped-date
+Authorization: Bearer {{token}}
 
 ### Marks the skipped instance 3 as done, which clears the skip
 
 POST {{baseUrl}}/api/ChoreInstances/3/mark-as-done
+Authorization: Bearer {{token}}
 
 ### Skips instance 3 again, which clears the done date
 
 POST {{baseUrl}}/api/ChoreInstances/3/mark-as-skipped
+Authorization: Bearer {{token}}
 
 ### Updates the name on chore 4
 
 POST {{baseUrl}}/api/Chores/4
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
   "name": "Pay the rent on time"
 }
 
-### Assigns chore 2 to user 1
+### Assigns chore 2 to the child
 
 POST {{baseUrl}}/api/Chores/2
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
-  "userId": 1
+  "userId": "{{childId}}"
 }
 
-### Only the chores for user 1, should be chore 2
+### Only the chores for the child, should be chore 2
 
-GET {{baseUrl}}/api/Chores?householdId=1&userId=1
+GET {{baseUrl}}/api/Chores?userId={{childId}}
+Authorization: Bearer {{token}}
 
-### Only the instances for user 1, should be the instances for chore 2
+### Only the instances for the child, should be the instances for chore 2
 
-GET {{baseUrl}}/api/ChoreInstances?householdId=1&userId=1
+GET {{baseUrl}}/api/ChoreInstances?userId={{childId}}
+Authorization: Bearer {{token}}
 
 ### Adds a rule to chore 1 without startDate, should return 400
 
 POST {{baseUrl}}/api/Chores/1
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -775,6 +935,7 @@ Content-Type: application/json
 ### Chore 3 becomes weekly on Sundays (64) every week. Open instances from today are generated again after the new rule
 
 POST {{baseUrl}}/api/Chores/3
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -786,11 +947,13 @@ Content-Type: application/json
 
 ### Instances for chore 3 are now every Sunday, should be 15, 22 and 29 Nov and 6 Dec
 
-GET {{baseUrl}}/api/ChoreInstances?householdId=1&from=2026-11-14T00:00:00%2B01:00&to=2026-12-08T00:00:00%2B01:00
+GET {{baseUrl}}/api/ChoreInstances?from=2026-11-14T00:00:00%2B01:00&to=2026-12-08T00:00:00%2B01:00
+Authorization: Bearer {{token}}
 
 ### Weekdays on a daily rule, should return 400
 
 POST {{baseUrl}}/api/Chores/3
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -801,6 +964,7 @@ Content-Type: application/json
 ### Renames chore 2 for the future, should return a NEW chore 5 with a new id and the same rule. Open instances from tomorrow move over to it, the skipped one stays on chore 2
 
 POST {{baseUrl}}/api/Chores/2/update-future
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -809,11 +973,13 @@ Content-Type: application/json
 
 ### Chore 2 has only the skipped instance left, chore 5 has the rest and does not get 16 Nov
 
-GET {{baseUrl}}/api/ChoreInstances?householdId=1&from=2026-11-09T00:00:00%2B01:00&to=2026-12-08T00:00:00%2B01:00
+GET {{baseUrl}}/api/ChoreInstances?from=2026-11-09T00:00:00%2B01:00&to=2026-12-08T00:00:00%2B01:00
+Authorization: Bearer {{token}}
 
 ### Nothing changed, should return chore 5 itself (same id, no new chore created)
 
 POST {{baseUrl}}/api/Chores/5/update-future
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -823,6 +989,7 @@ Content-Type: application/json
 ### Chore without a rule (chore 1), should return 404
 
 POST {{baseUrl}}/api/Chores/1/update-future
+Authorization: Bearer {{token}}
 Content-Type: application/json
 
 {
@@ -832,23 +999,28 @@ Content-Type: application/json
 ### Deletes one instance of the recurring chore 5. The chore stays. It is created again by the nightly generation, so skipping is the right way to leave one out
 
 DELETE {{baseUrl}}/api/ChoreInstances/18
+Authorization: Bearer {{token}}
 
 ### Deletes both instances of the one-off chore 1, the chore is removed with the last one
 
 DELETE {{baseUrl}}/api/ChoreInstances/1
+Authorization: Bearer {{token}}
 
 ###
 
 DELETE {{baseUrl}}/api/ChoreInstances/13
+Authorization: Bearer {{token}}
 
 ### Chore 1 is gone, should return 404
 
 GET {{baseUrl}}/api/Chores/1
+Authorization: Bearer {{token}}
 
 # Images
 ### Uploads an image for recipe 1
 
 POST {{baseUrl}}/api/Recipes/1/image
+Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----HouseholdBoundary
 
 ------HouseholdBoundary
@@ -861,14 +1033,17 @@ Content-Type: image/png
 ### Gets the image for recipe 1, should return image/png
 
 GET {{baseUrl}}/api/Recipes/1/image
+Authorization: Bearer {{token}}
 
 ### Recipe 1 should now have hasImage true
 
 GET {{baseUrl}}/api/Recipes/1
+Authorization: Bearer {{token}}
 
 ### A text file named .png, should return 400 because the content is checked
 
 POST {{baseUrl}}/api/Recipes/1/image
+Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----HouseholdBoundary
 
 ------HouseholdBoundary
@@ -881,6 +1056,7 @@ Content-Type: image/png
 ### A PDF as recipe image, should return 400
 
 POST {{baseUrl}}/api/Recipes/1/image
+Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----HouseholdBoundary
 
 ------HouseholdBoundary
@@ -893,6 +1069,7 @@ Content-Type: application/pdf
 ### Image for a recipe that doesn't exist, should return 404
 
 POST {{baseUrl}}/api/Recipes/999/image
+Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----HouseholdBoundary
 
 ------HouseholdBoundary
@@ -905,21 +1082,20 @@ Content-Type: image/png
 ### Removes the image from recipe 1
 
 DELETE {{baseUrl}}/api/Recipes/1/image
+Authorization: Bearer {{token}}
 
 ### The image is gone, should return 404
 
 GET {{baseUrl}}/api/Recipes/1/image
+Authorization: Bearer {{token}}
 
 # SchoolPlan
 ### Uploads a school plan for the week of 9 Nov (any date in the week is moved to the Monday), gets id 1
 
 POST {{baseUrl}}/api/SchoolPlans
+Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----HouseholdBoundary
 
-------HouseholdBoundary
-Content-Disposition: form-data; name="householdId"
-
-1
 ------HouseholdBoundary
 Content-Disposition: form-data; name="weekDate"
 
@@ -934,12 +1110,9 @@ Content-Type: application/pdf
 ### Uploads an image as a school plan for the same week, gets id 2
 
 POST {{baseUrl}}/api/SchoolPlans
+Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----HouseholdBoundary
 
-------HouseholdBoundary
-Content-Disposition: form-data; name="householdId"
-
-1
 ------HouseholdBoundary
 Content-Disposition: form-data; name="weekDate"
 
@@ -954,12 +1127,9 @@ Content-Type: image/png
 ### A text file, should return 400
 
 POST {{baseUrl}}/api/SchoolPlans
+Authorization: Bearer {{token}}
 Content-Type: multipart/form-data; boundary=----HouseholdBoundary
 
-------HouseholdBoundary
-Content-Disposition: form-data; name="householdId"
-
-1
 ------HouseholdBoundary
 Content-Disposition: form-data; name="weekDate"
 
@@ -971,50 +1141,218 @@ Content-Type: image/png
 < ./HttpSamples/not-an-image.png
 ------HouseholdBoundary--
 
-### Household that doesn't exist, should return 404
-
-POST {{baseUrl}}/api/SchoolPlans
-Content-Type: multipart/form-data; boundary=----HouseholdBoundary
-
-------HouseholdBoundary
-Content-Disposition: form-data; name="householdId"
-
-999
-------HouseholdBoundary
-Content-Disposition: form-data; name="weekDate"
-
-2026-11-09
-------HouseholdBoundary
-Content-Disposition: form-data; name="file"; filename="sample.pdf"
-Content-Type: application/pdf
-
-< ./HttpSamples/sample.pdf
-------HouseholdBoundary--
-
 ### Gets all school plans for household 1
 
-GET {{baseUrl}}/api/SchoolPlans?householdId=1
+GET {{baseUrl}}/api/SchoolPlans
+Authorization: Bearer {{token}}
 
 ### Gets the school plans for the week containing 11 Nov
 
-GET {{baseUrl}}/api/SchoolPlans?householdId=1&weekDate=2026-11-11
+GET {{baseUrl}}/api/SchoolPlans?weekDate=2026-11-11
+Authorization: Bearer {{token}}
 
 ### Gets the school plans for another week, should be empty
 
-GET {{baseUrl}}/api/SchoolPlans?householdId=1&weekDate=2026-11-18
+GET {{baseUrl}}/api/SchoolPlans?weekDate=2026-11-18
+Authorization: Bearer {{token}}
 
 ### Gets school plan 1
 
 GET {{baseUrl}}/api/SchoolPlans/1
+Authorization: Bearer {{token}}
 
 ### Gets the file for school plan 1, should return application/pdf
 
 GET {{baseUrl}}/api/SchoolPlans/1/file
+Authorization: Bearer {{token}}
 
 ### Deletes school plan 2
 
 DELETE {{baseUrl}}/api/SchoolPlans/2
+Authorization: Bearer {{token}}
 
 ### School plan 2 is gone, should return 404
 
 GET {{baseUrl}}/api/SchoolPlans/2
+Authorization: Bearer {{token}}
+
+# Ending and deleting chores
+### Creates a daily chore, gets a new chore id and daily instances
+# @name dailyChore
+POST {{baseUrl}}/api/ChoreInstances/new-chore
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Water the plants",
+  "frequency": 0,
+  "startDate": "2026-11-10",
+  "periodStartDate": "2026-11-10T00:00:00+01:00"
+}
+
+### Ends the recurrence from tomorrow, the chore stays without a rule and open instances from tomorrow are removed. Replace 6 with the chore id from the response above
+
+POST {{baseUrl}}/api/Chores/6/end
+Authorization: Bearer {{token}}
+
+### Deletes the chore with all its instances
+
+DELETE {{baseUrl}}/api/Chores/6
+Authorization: Bearer {{token}}
+
+### Only open instances up to a date, use it to find overdue chores
+
+GET {{baseUrl}}/api/ChoreInstances?to=2026-11-10T00:00:00%2B01:00&onlyOpen=true
+Authorization: Bearer {{token}}
+
+# Shopping list cleanup
+### Clears all bought items, returns deletedCount
+
+DELETE {{baseUrl}}/api/ShoppingItems/bought
+Authorization: Bearer {{token}}
+
+# Passwords and tokens
+### Changes the password of the logged in user, returns a new token pair and invalidates the old refresh tokens
+
+POST {{baseUrl}}/api/Auth/change-password
+Authorization: Bearer {{childToken}}
+Content-Type: application/json
+
+{
+  "currentPassword": "{{childPassword}}",
+  "newPassword": "{{childPassword}}x"
+}
+
+### The old password no longer works, should return 401
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "{{childPassword}}"
+}
+
+### The admin resets the password of the child back to the original
+
+POST {{baseUrl}}/api/Users/{{childId}}/reset-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "newPassword": "{{childPassword}}"
+}
+
+### Logs in as the child again and refreshes. Paste the refreshToken from the response into refreshTokenValue below
+# @name childLogin2
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "{{childPassword}}"
+}
+
+###
+@refreshTokenValue = {{childLogin2.response.body.$.refreshToken}}
+
+POST {{baseUrl}}/api/Auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshTokenValue}}"
+}
+
+### The same refresh token used again, should return 401 and revoke all tokens for the child
+
+POST {{baseUrl}}/api/Auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshTokenValue}}"
+}
+
+### Logout with a token that is already revoked, should return 204
+
+POST {{baseUrl}}/api/Auth/logout
+Content-Type: application/json
+
+{
+  "refreshToken": "{{refreshTokenValue}}"
+}
+
+# The child
+### The child sees only its own chores
+
+GET {{baseUrl}}/api/Chores
+Authorization: Bearer {{childToken}}
+
+### The child sees only its own instances
+
+GET {{baseUrl}}/api/ChoreInstances
+Authorization: Bearer {{childToken}}
+
+### The child can see recipes and school plans
+
+GET {{baseUrl}}/api/Recipes
+Authorization: Bearer {{childToken}}
+
+###
+
+GET {{baseUrl}}/api/SchoolPlans
+Authorization: Bearer {{childToken}}
+
+### The child can add to the shopping list
+
+POST {{baseUrl}}/api/ShoppingItems
+Authorization: Bearer {{childToken}}
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "amount": 1,
+  "unit": 5
+}
+
+### The child can not create recipes, should return 403
+
+POST {{baseUrl}}/api/Recipes
+Authorization: Bearer {{childToken}}
+Content-Type: application/json
+
+{
+  "name": "Not allowed"
+}
+
+### The child can not delete shopping items, should return 403
+
+DELETE {{baseUrl}}/api/ShoppingItems/1
+Authorization: Bearer {{childToken}}
+
+### The child can not create users, should return 403
+
+POST {{baseUrl}}/api/Users
+Authorization: Bearer {{childToken}}
+Content-Type: application/json
+
+{
+  "userName": "Another",
+  "password": "Another12345!",
+  "role": "child"
+}
+
+### The admin cannot delete its own household, should return 400
+
+DELETE {{baseUrl}}/api/Households/1
+Authorization: Bearer {{token}}
+
+# Lockout, run this last because it locks the child out for 15 minutes
+### Five wrong passwords lock the account, the sixth attempt should return 429 even with the correct password
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "wrong"
+}

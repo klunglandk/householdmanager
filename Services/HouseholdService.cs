@@ -20,14 +20,16 @@ namespace HouseholdManager.Services
 
     public class HouseholdService : IHouseholdService
     {
-        public HouseholdService(HouseholdContext context, IFileStorage fileStorage)
+        public HouseholdService(HouseholdContext context, IFileStorage fileStorage, ICurrentUser currentUser)
         {
             _context = context;
             _fileStorage = fileStorage;
+            _currentUser = currentUser;
         }
 
         private readonly HouseholdContext _context;
         private readonly IFileStorage _fileStorage;
+        private readonly ICurrentUser _currentUser;
 
         public Household CreateHousehold(CreateHouseholdModel model)
         {
@@ -56,6 +58,11 @@ namespace HouseholdManager.Services
 
         public bool DeleteHousehold(int householdId)
         {
+            if (householdId == _currentUser.HouseholdId)
+            {
+                throw new ValidationException("You cannot delete your own household.");
+            }
+
             if (GetHousehold(householdId) is not { } household) return false;
 
             var storedFileNames = _context.Recipes

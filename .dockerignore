@@ -1,6 +1,9 @@
 **/.classpath
 **/.dockerignore
 **/.env
+**/.env.*
+**/*.http
+**/uploads
 **/.git
 **/.gitignore
 **/.project

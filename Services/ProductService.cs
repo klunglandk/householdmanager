@@ -1,5 +1,6 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Infrastructure;
 using System.ComponentModel.DataAnnotations;
 
 namespace HouseholdManager.Services
@@ -8,7 +9,7 @@ namespace HouseholdManager.Services
     {
         Product? GetProduct(int productId);
 
-        List<Product> GetAllProducts(int householdId);
+        List<Product> GetAllProducts();
 
         Product CreateProduct(CreateProductModel model);
 
@@ -19,26 +20,28 @@ namespace HouseholdManager.Services
 
     public class ProductService : IProductService
     {
-        public ProductService(HouseholdContext context)
+        public ProductService(HouseholdContext context, ICurrentUser currentUser)
         {
             _context = context;
+            _currentUser = currentUser;
         }
 
         private readonly HouseholdContext _context;
+        private readonly ICurrentUser _currentUser;
 
         public Product? GetProduct(int productId)
         {
-            return _context.Products.FirstOrDefault(product => product.Id == productId);
+            return _context.Products.Where(product => product.HouseholdId == _currentUser.HouseholdId).FirstOrDefault(product => product.Id == productId);
         }
 
-        public List<Product> GetAllProducts(int householdId)
+        public List<Product> GetAllProducts()
         {
-            return _context.Products.Where(product => product.HouseholdId == householdId).ToList();
+            return _context.Products.Where(product => product.HouseholdId == _currentUser.HouseholdId).ToList();
         }
 
         public Product CreateProduct(CreateProductModel model)
         {
-            var result = _context.Products.Add(new Product { Name = model.Name, HouseholdId = model.HouseholdId });
+            var result = _context.Products.Add(new Product { Name = model.Name, HouseholdId = _currentUser.HouseholdId });
             _context.SaveChanges();
             return result.Entity;
         }
@@ -65,7 +68,6 @@ namespace HouseholdManager.Services
         [Required, MinLength(2), MaxLength(128)]
         public required string Name { get; set; }
 
-        public required int HouseholdId { get; set; }
     }
 
     public class UpdateProductModel

@@ -1,5 +1,6 @@
 using HouseholdManager.Dtos;
 using HouseholdManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
@@ -24,9 +25,9 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId)
+        public IActionResult GetAll()
         {
-            var result = ShoppingItemDto.MapCollection(_shoppingItemService.GetAllShoppingItems(householdId));
+            var result = ShoppingItemDto.MapCollection(_shoppingItemService.GetAllShoppingItems());
             return Ok(result);
         }
 
@@ -47,6 +48,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{shoppingItemId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Update(int shoppingItemId, [FromBody] UpdateShoppingItemModel model)
         {
             if (_shoppingItemService.UpdateShoppingItem(shoppingItemId, model) is not { } shoppingItem) return NotFound();
@@ -55,6 +57,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{shoppingItemId}/mark-as-bought")]
+        [Authorize(Roles = "admin")]
         public IActionResult MarkAsBought(int shoppingItemId)
         {
             if (_shoppingItemService.MarkAsBought(shoppingItemId) is not { } shoppingItem) return NotFound();
@@ -62,13 +65,23 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{shoppingItemId}/clear-bought-date")]
+        [Authorize(Roles = "admin")]
         public IActionResult ClearBoughtDate(int shoppingItemId)
         {
             if (_shoppingItemService.ClearBoughtDate(shoppingItemId) is not { } shoppingItem) return NotFound();
             return Ok(ShoppingItemDto.Map(shoppingItem));
         }
 
+        [HttpDelete("bought")]
+        [Authorize(Roles = "admin")]
+        public IActionResult DeleteBought()
+        {
+            var deletedCount = _shoppingItemService.DeleteBoughtShoppingItems();
+            return Ok(new { deletedCount });
+        }
+
         [HttpDelete("{shoppingItemId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Delete(int shoppingItemId)
         {
             if (!_shoppingItemService.DeleteShoppingItem(shoppingItemId)) return NotFound();

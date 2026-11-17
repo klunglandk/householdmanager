@@ -10,7 +10,7 @@ namespace HouseholdManager.Services
     {
         Recipe? GetRecipe(int recipeId);
 
-        List<Recipe> GetAllRecipes(int householdId);
+        List<Recipe> GetAllRecipes();
 
         Recipe CreateRecipe(CreateRecipeModel model);
 
@@ -27,29 +27,31 @@ namespace HouseholdManager.Services
 
     public class RecipeService : IRecipeService
     {
-        public RecipeService(HouseholdContext context, IFileStorage fileStorage)
+        public RecipeService(HouseholdContext context, IFileStorage fileStorage, ICurrentUser currentUser)
         {
             _context = context;
             _fileStorage = fileStorage;
+            _currentUser = currentUser;
         }
 
         private readonly HouseholdContext _context;
         private readonly IFileStorage _fileStorage;
+        private readonly ICurrentUser _currentUser;
 
         public Recipe? GetRecipe(int recipeId)
         {
             return _context.Recipes
                 .Include(recipe => recipe.Ingredients)
                 .ThenInclude(ingredient => ingredient.Product)
-                .FirstOrDefault(recipe => recipe.Id == recipeId);
+                .FirstOrDefault(recipe => recipe.Id == recipeId && recipe.HouseholdId == _currentUser.HouseholdId);
         }
 
-        public List<Recipe> GetAllRecipes(int householdId)
+        public List<Recipe> GetAllRecipes()
         {
             return _context.Recipes
                 .Include(recipe => recipe.Ingredients)
                 .ThenInclude(ingredient => ingredient.Product)
-                .Where(recipe => recipe.HouseholdId == householdId)
+                .Where(recipe => recipe.HouseholdId == _currentUser.HouseholdId)
                 .ToList();
         }
 
@@ -60,7 +62,7 @@ namespace HouseholdManager.Services
                 Name = model.Name,
                 Instructions = model.Instructions,
                 Servings = model.Servings,
-                HouseholdId = model.HouseholdId
+                HouseholdId = _currentUser.HouseholdId
             });
             _context.SaveChanges();
             return result.Entity;
@@ -133,8 +135,6 @@ namespace HouseholdManager.Services
 
         [Range(1, int.MaxValue)]
         public int? Servings { get; set; }
-
-        public required int HouseholdId { get; set; }
     }
 
     public class UpdateRecipeModel

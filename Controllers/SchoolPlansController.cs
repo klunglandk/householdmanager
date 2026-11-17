@@ -2,6 +2,7 @@ using HouseholdManager.Dtos;
 using HouseholdManager.Infrastructure;
 using HouseholdManager.Models;
 using HouseholdManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
@@ -26,9 +27,9 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId, DateOnly? weekDate)
+        public IActionResult GetAll(DateOnly? weekDate)
         {
-            var result = SchoolPlanDto.MapCollection(_schoolPlanService.GetAllSchoolPlans(householdId, weekDate));
+            var result = SchoolPlanDto.MapCollection(_schoolPlanService.GetAllSchoolPlans(weekDate));
             return Ok(result);
         }
 
@@ -43,17 +44,17 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public async Task<IActionResult> Create([FromForm] CreateSchoolPlanModel model, CancellationToken cancellationToken)
         {
             await using var stream = model.File.OpenReadStream();
-            var newSchoolPlan = await _schoolPlanService.CreateSchoolPlanAsync(model.HouseholdId, model.WeekDate, model.File.FileName, stream, cancellationToken);
-            if (newSchoolPlan is null) return NotFound();
-
+            var newSchoolPlan = await _schoolPlanService.CreateSchoolPlanAsync(model.WeekDate, model.File.FileName, stream, cancellationToken);
             var result = SchoolPlanDto.Map(newSchoolPlan);
             return Ok(result);
         }
 
         [HttpDelete("{schoolPlanId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Delete(int schoolPlanId)
         {
             if (!_schoolPlanService.DeleteSchoolPlan(schoolPlanId)) return NotFound();

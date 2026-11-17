@@ -1,5 +1,6 @@
 using HouseholdManager.Dtos;
 using HouseholdManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
@@ -8,7 +9,8 @@ namespace HouseholdManager.Controllers
     [ApiController]
     public class ChoresController : ControllerBase
     {
-        public ChoresController(IChoreService choreService) {
+        public ChoresController(IChoreService choreService)
+        {
             _choreService = choreService;
         }
 
@@ -23,13 +25,14 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId, string? userId)
+        public IActionResult GetAll(string? userId)
         {
-            var result = ChoreDto.MapCollection(_choreService.GetAllChores(householdId, userId));
+            var result = ChoreDto.MapCollection(_choreService.GetAllChores(userId));
             return Ok(result);
         }
 
         [HttpPost("{choreId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Update(int choreId, [FromBody] UpdateChoreModel model)
         {
             if (_choreService.UpdateChore(choreId, model) is not { } chore) return NotFound();
@@ -38,6 +41,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{choreId}/update-future")]
+        [Authorize(Roles = "admin")]
         public IActionResult UpdateFutureChore(int choreId, [FromBody] UpdateChoreModel model)
         {
             if (_choreService.UpdateFutureChore(choreId, model) is not { } chore) return NotFound();
@@ -45,5 +49,21 @@ namespace HouseholdManager.Controllers
             return Ok(result);
         }
 
+        [HttpPost("{choreId}/end")]
+        [Authorize(Roles = "admin")]
+        public IActionResult End(int choreId)
+        {
+            if (_choreService.EndChore(choreId) is not { } chore) return NotFound();
+            var result = ChoreDto.Map(chore);
+            return Ok(result);
+        }
+
+        [HttpDelete("{choreId}")]
+        [Authorize(Roles = "admin")]
+        public IActionResult Delete(int choreId)
+        {
+            if (!_choreService.DeleteChore(choreId)) return NotFound();
+            return Ok();
+        }
     }
 }

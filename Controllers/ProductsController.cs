@@ -1,5 +1,6 @@
 using HouseholdManager.Dtos;
 using HouseholdManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
@@ -24,13 +25,14 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(int householdId)
+        public IActionResult GetAll()
         {
-            var result = ProductDto.MapCollection(_productService.GetAllProducts(householdId));
+            var result = ProductDto.MapCollection(_productService.GetAllProducts());
             return Ok(result);
         }
 
         [HttpPost]
+        [Authorize(Roles = "admin")]
         public IActionResult Create([FromBody] CreateProductModel model)
         {
             var newProduct = _productService.CreateProduct(model);
@@ -39,6 +41,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{productId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Update(int productId, [FromBody] UpdateProductModel model)
         {
             if (_productService.UpdateProduct(productId, model) is not { } product) return NotFound();
@@ -47,6 +50,7 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpDelete("{productId}")]
+        [Authorize(Roles = "admin")]
         public IActionResult Delete(int productId)
         {
             if (!_productService.DeleteProduct(productId)) return NotFound();

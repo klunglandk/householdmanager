@@ -1,14 +1,17 @@
 using HouseholdManager.Dtos;
 using HouseholdManager.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace HouseholdManager.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles = "admin")]
     public class HouseholdsController : ControllerBase
     {
-        public HouseholdsController(IHouseholdService householdService) {
+        public HouseholdsController(IHouseholdService householdService)
+        {
             _householdService = householdService;
         }
 

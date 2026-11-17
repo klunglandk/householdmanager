@@ -30,6 +30,8 @@ namespace HouseholdManager.Database
 
         public DbSet<SchoolPlan> SchoolPlans { get; set; }
 
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -107,6 +109,15 @@ namespace HouseholdManager.Database
                 e.Property(p => p.StoredFileName).HasMaxLength(64);
                 e.Property(p => p.OriginalFileName).HasMaxLength(255);
                 e.HasOne(p => p.Household).WithMany(p => p.SchoolPlans).HasForeignKey(p => p.HouseholdId);
+            });
+
+            modelBuilder.Entity<RefreshToken>(e =>
+            {
+                e.HasKey(p => p.Id);
+                e.Property(p => p.Id).ValueGeneratedOnAdd();
+                e.Property(p => p.TokenHash).HasMaxLength(64);
+                e.HasIndex(p => p.TokenHash).IsUnique();
+                e.HasOne<User>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

@@ -1,17 +1,12 @@
-using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
-using System.Text;
 using System.Security.Claims;
+using System.Text;
 using HouseholdManager.Infrastructure;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 
 namespace HouseholdManager.Services
 {
-    public interface ITokenService
-    {
-        string GenerateJwtToken(string userId, string userName, string userRole, int householdId);
-    }
-
     public class TokenService : ITokenService
     {
         public TokenService(IOptions<JwtOptions> options)

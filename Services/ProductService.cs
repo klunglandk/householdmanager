@@ -1,23 +1,10 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
-using System.ComponentModel.DataAnnotations;
+using HouseholdManager.Models;
 
 namespace HouseholdManager.Services
 {
-    public interface IProductService
-    {
-        Product? GetProduct(int productId);
-
-        List<Product> GetAllProducts();
-
-        Product CreateProduct(CreateProductModel model);
-
-        Product? UpdateProduct(int productId, UpdateProductModel model);
-
-        bool DeleteProduct(int productId);
-    }
-
     public class ProductService : IProductService
     {
         public ProductService(HouseholdContext context, ICurrentUser currentUser)
@@ -61,18 +48,5 @@ namespace HouseholdManager.Services
             _context.SaveChanges();
             return true;
         }
-    }
-
-    public class CreateProductModel
-    {
-        [Required, MinLength(2), MaxLength(128)]
-        public required string Name { get; set; }
-
-    }
-
-    public class UpdateProductModel
-    {
-        [MinLength(2), MaxLength(128)]
-        public string? Name { get; set; }
     }
 }

@@ -10,23 +10,21 @@ namespace HouseholdManager.Dtos
 
         public int HouseholdId { get; set; }
 
-        public static UserDto Map(User user)
+        public string Role { get; set; } = string.Empty;
+
+        public bool IsActive { get; set; }
+
+        public static UserDto Map(User user, string role)
         {
             var result = new UserDto
             {
                 Id = user.Id,
                 UserName = user.UserName ?? string.Empty,
-                HouseholdId = user.HouseholdId
+                HouseholdId = user.HouseholdId,
+                Role = role,
+                IsActive = user.LockoutEnd is null || user.LockoutEnd <= DateTimeOffset.UtcNow
             };
             return result;
-        }
-
-        public static IEnumerable<UserDto> MapCollection(IEnumerable<User> users)
-        {
-            foreach (var user in users)
-            {
-                yield return Map(user);
-            }
         }
     }
 }

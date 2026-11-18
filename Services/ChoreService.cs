@@ -1,28 +1,12 @@
+using System.ComponentModel.DataAnnotations;
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
 using HouseholdManager.Models;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace HouseholdManager.Services
 {
-    public interface IChoreService
-    {
-        Chore? GetChore(int choreId);
-
-        List<Chore> GetAllChores(string? userId);
-
-        Chore CreateChore(CreateChoreModel model);
-
-        Chore? UpdateChore(int choreId, UpdateChoreModel model);
-
-        Chore? UpdateFutureChore(int choreId, UpdateChoreModel model);
-
-        Chore? EndChore(int choreId);
-
-        bool DeleteChore(int choreId);
-    }
     public class ChoreService : IChoreService
     {
         public ChoreService(HouseholdContext context, IRecurrenceRuleService recurrenceRuleService, IChoreInstanceGenerator instanceGenerator, ICurrentUser currentUser)
@@ -164,22 +148,5 @@ namespace HouseholdManager.Services
                 throw new ValidationException("The user does not belong to your household.");
             }
         }
-    }
-
-    public class CreateChoreModel : RecurrenceInputModel
-    {
-        [Required, MinLength(2), MaxLength(128)]
-        public required string Name { get; set; }
-
-        public string? UserId { get; set; }
-    }
-
-    public class UpdateChoreModel : RecurrenceInputModel
-    {
-        [MinLength(2), MaxLength(128)]
-        public string? Name { get; set; }
-
-        public string? UserId { get; set; }
-
     }
 }

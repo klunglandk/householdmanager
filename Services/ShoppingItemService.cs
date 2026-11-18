@@ -1,32 +1,11 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
+using HouseholdManager.Models;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace HouseholdManager.Services
 {
-    public interface IShoppingItemService
-    {
-        ShoppingItem? GetShoppingItem(int shoppingItemId);
-
-        List<ShoppingItem> GetAllShoppingItems();
-
-        ShoppingItem? CreateShoppingItem(CreateShoppingItemModel model);
-
-        List<ShoppingItem>? AddFromRecipe(int recipeId, AddRecipeToShoppingListModel model);
-
-        ShoppingItem? UpdateShoppingItem(int shoppingItemId, UpdateShoppingItemModel model);
-
-        ShoppingItem? MarkAsBought(int shoppingItemId);
-
-        ShoppingItem? ClearBoughtDate(int shoppingItemId);
-
-        bool DeleteShoppingItem(int shoppingItemId);
-
-        int DeleteBoughtShoppingItems();
-    }
-
     public class ShoppingItemService : IShoppingItemService
     {
         public ShoppingItemService(HouseholdContext context, IProductService productService, IRecipeService recipeService, ICurrentUser currentUser)
@@ -180,31 +159,5 @@ namespace HouseholdManager.Services
             unbought.Add(newItem);
             return newItem;
         }
-    }
-
-    public class CreateShoppingItemModel
-    {
-        public required int ProductId { get; set; }
-
-        [Range(0.0001, 1000000)]
-        public required decimal Amount { get; set; }
-
-        public required MeasurementUnit Unit { get; set; }
-    }
-
-    public class UpdateShoppingItemModel
-    {
-        [Range(0.0001, 1000000)]
-        public decimal? Amount { get; set; }
-
-        public MeasurementUnit? Unit { get; set; }
-    }
-
-    public class AddRecipeToShoppingListModel
-    {
-        public List<int>? IngredientIds { get; set; }
-
-        [Range(1, int.MaxValue)]
-        public int? Servings { get; set; }
     }
 }

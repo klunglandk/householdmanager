@@ -7,7 +7,7 @@ namespace HouseholdManager.Models
         [Required]
         public required string UserName { get; set; }
 
-        [Required]
+        [Required, MaxLength(128)]
         public required string Password { get; set; }
 
         [Required]

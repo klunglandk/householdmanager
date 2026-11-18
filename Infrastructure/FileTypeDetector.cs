@@ -1,7 +1,5 @@
 namespace HouseholdManager.Infrastructure
 {
-    public record DetectedFileType(string Extension, string ContentType, bool IsImage);
-
     public static class FileTypeDetector
     {
         private static readonly DetectedFileType Jpeg = new(".jpg", "image/jpeg", true);

@@ -15,6 +15,5 @@ namespace HouseholdManager.Database.DataModels
         public int HouseholdId { get; set; }
 
         public Household Household { get; set; } = default!;
-
     }
 }

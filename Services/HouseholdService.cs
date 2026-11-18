@@ -1,23 +1,11 @@
+using System.ComponentModel.DataAnnotations;
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
-using System.ComponentModel.DataAnnotations;
+using HouseholdManager.Models;
 
 namespace HouseholdManager.Services
 {
-    public interface IHouseholdService
-    {
-        Household CreateHousehold(CreateHouseholdModel model);
-
-        Household? GetHousehold(int householdId);
-
-        List<Household> GetAllHouseholds();
-
-        Household? UpdateHousehold(int householdId, UpdateHouseholdModel model);
-
-        bool DeleteHousehold(int householdId);
-    }
-
     public class HouseholdService : IHouseholdService
     {
         public HouseholdService(HouseholdContext context, IFileStorage fileStorage, ICurrentUser currentUser)
@@ -81,17 +69,5 @@ namespace HouseholdManager.Services
             }
             return true;
         }
-    }
-
-    public class CreateHouseholdModel
-    {
-        [Required, MinLength(2), MaxLength(128)]
-        public required string Name { get; set; }
-    }
-
-    public class UpdateHouseholdModel
-    {
-        [MinLength(2), MaxLength(128)]
-        public string? Name { get; set; }
     }
 }

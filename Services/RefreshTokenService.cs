@@ -1,27 +1,14 @@
+using System.Buffers.Text;
+using System.Security.Cryptography;
+using System.Text;
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using System.Buffers.Text;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace HouseholdManager.Services
 {
-    public record RotatedRefreshToken(string UserId, string RawToken);
-
-    public interface IRefreshTokenService
-    {
-        Task<string> CreateAsync(string userId);
-
-        Task<RotatedRefreshToken?> RotateAsync(string rawToken);
-
-        Task RevokeAsync(string rawToken);
-
-        Task RevokeAllAsync(string userId);
-    }
-
     public class RefreshTokenService : IRefreshTokenService
     {
         public RefreshTokenService(HouseholdContext context, IOptions<JwtOptions> options, TimeProvider timeProvider)

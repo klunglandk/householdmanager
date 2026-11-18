@@ -1,5 +1,5 @@
-﻿using HouseholdManager.Database.DataModels;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
+using HouseholdManager.Database.DataModels;
 
 namespace HouseholdManager.Models
 {

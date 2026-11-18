@@ -1,24 +1,11 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
+using HouseholdManager.Models;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace HouseholdManager.Services
 {
-    public interface IIngredientService
-    {
-        Ingredient? GetIngredient(int ingredientId);
-
-        List<Ingredient> GetAllIngredients(int recipeId);
-
-        Ingredient? CreateIngredient(CreateIngredientModel model);
-
-        Ingredient? UpdateIngredient(int ingredientId, UpdateIngredientModel model);
-
-        bool DeleteIngredient(int ingredientId);
-    }
-
     public class IngredientService : IIngredientService
     {
         public IngredientService(HouseholdContext context, IProductService productService, ICurrentUser currentUser)
@@ -83,25 +70,5 @@ namespace HouseholdManager.Services
             _context.SaveChanges();
             return true;
         }
-    }
-
-    public class CreateIngredientModel
-    {
-        public required int RecipeId { get; set; }
-
-        public required int ProductId { get; set; }
-
-        [Range(0.0001, 1000000)]
-        public required decimal Amount { get; set; }
-
-        public required MeasurementUnit Unit { get; set; }
-    }
-
-    public class UpdateIngredientModel
-    {
-        [Range(0.0001, 1000000)]
-        public decimal? Amount { get; set; }
-
-        public MeasurementUnit? Unit { get; set; }
     }
 }

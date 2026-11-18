@@ -3,31 +3,9 @@ using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
 using HouseholdManager.Models;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace HouseholdManager.Services
 {
-    public interface IChoreInstanceService
-    {
-        ChoreInstance? GetChoreInstance(int choreInstanceId);
-
-        List<ChoreInstance> GetAllChoreInstances(DateTimeOffset? from, DateTimeOffset? to, string? userId, bool onlyOpen);
-
-        ChoreInstance? CreateChoreInstance(CreateChoreInstanceModel model);
-
-        ChoreInstance CreateChoreInstanceWithNewChore(CreateChoreInstanceWithNewChoreModel model);
-
-        ChoreInstance? MarkAsDone(int choreInstanceId);
-
-        ChoreInstance? ClearDoneDate(int choreInstanceId);
-
-        ChoreInstance? MarkAsSkipped(int choreInstanceId);
-
-        ChoreInstance? ClearSkippedDate(int choreInstanceId);
-
-        bool DeleteChoreInstance(int choreInstanceId);
-
-    }
     public class ChoreInstanceService : IChoreInstanceService
     {
         public ChoreInstanceService(HouseholdContext context, IChoreService choreService, IChoreInstanceGenerator instanceGenerator, ICurrentUser currentUser)
@@ -72,7 +50,6 @@ namespace HouseholdManager.Services
 
         public ChoreInstance? CreateChoreInstance(CreateChoreInstanceModel model)
         {
-
             if (_choreService.GetChore(model.ChoreId) is not { } chore) return null;
 
             var newInstance = new ChoreInstance
@@ -169,26 +146,6 @@ namespace HouseholdManager.Services
             }
 
             return true;
-
         }
-
     }
-
-    public class CreateChoreInstanceModel
-    {
-        public required int ChoreId { get; set; }
-
-        public required DateTimeOffset PeriodStartDate { get; set; }
-    }
-
-    public class CreateChoreInstanceWithNewChoreModel : RecurrenceInputModel
-    {
-        [Required, MinLength(2), MaxLength(128)]
-        public required string Name { get; set; }
-
-        public string? UserId { get; set; }
-
-        public required DateTimeOffset PeriodStartDate { get; set; }
-    }
-
 }

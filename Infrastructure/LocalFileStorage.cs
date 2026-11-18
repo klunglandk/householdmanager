@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
+using Microsoft.Extensions.Options;
 
 namespace HouseholdManager.Infrastructure
 {

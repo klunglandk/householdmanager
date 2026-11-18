@@ -19,6 +19,5 @@ namespace HouseholdManager.Database.DataModels
         public RecurrenceRule? RecurrenceRule { get; set; }
 
         public List<ChoreInstance> ChoreInstances { get; set; } = [];
-
     }
 }

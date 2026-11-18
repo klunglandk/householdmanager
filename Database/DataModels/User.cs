@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity;
 namespace HouseholdManager.Database.DataModels
 {
     public class User : IdentityUser
@@ -9,6 +9,5 @@ namespace HouseholdManager.Database.DataModels
         public Household Household { get; set; } = default!;
 
         public List<Chore> Chores { get; set; } = [];
-
     }
 }

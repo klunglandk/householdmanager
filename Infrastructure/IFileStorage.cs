@@ -1,10 +1,5 @@
 namespace HouseholdManager.Infrastructure
 {
-    public enum AllowedFileKind
-    {
-        Image, ImageOrPdf
-    }
-
     public interface IFileStorage
     {
         Task<string> SaveAsync(Stream content, AllowedFileKind allowedKind, CancellationToken cancellationToken);

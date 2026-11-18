@@ -1,30 +1,11 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
+using HouseholdManager.Models;
 using Microsoft.EntityFrameworkCore;
-using System.ComponentModel.DataAnnotations;
 
 namespace HouseholdManager.Services
 {
-    public interface IRecipeService
-    {
-        Recipe? GetRecipe(int recipeId);
-
-        List<Recipe> GetAllRecipes();
-
-        Recipe CreateRecipe(CreateRecipeModel model);
-
-        Recipe? UpdateRecipe(int recipeId, UpdateRecipeModel model);
-
-        bool DeleteRecipe(int recipeId);
-
-        Task<Recipe?> SetImageAsync(int recipeId, Stream content, CancellationToken cancellationToken);
-
-        Stream? OpenImage(Recipe recipe);
-
-        Recipe? RemoveImage(int recipeId);
-    }
-
     public class RecipeService : IRecipeService
     {
         public RecipeService(HouseholdContext context, IFileStorage fileStorage, ICurrentUser currentUser)
@@ -124,27 +105,5 @@ namespace HouseholdManager.Services
             if (oldImagePath is not null) _fileStorage.Delete(oldImagePath);
             return recipe;
         }
-    }
-
-    public class CreateRecipeModel
-    {
-        [Required, MinLength(2), MaxLength(128)]
-        public required string Name { get; set; }
-
-        public string Instructions { get; set; } = string.Empty;
-
-        [Range(1, int.MaxValue)]
-        public int? Servings { get; set; }
-    }
-
-    public class UpdateRecipeModel
-    {
-        [MinLength(2), MaxLength(128)]
-        public string? Name { get; set; }
-
-        public string? Instructions { get; set; }
-
-        [Range(1, int.MaxValue)]
-        public int? Servings { get; set; }
     }
 }

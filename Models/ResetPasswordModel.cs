@@ -4,7 +4,7 @@ namespace HouseholdManager.Models
 {
     public class ResetPasswordModel
     {
-        [Required]
+        [Required, MaxLength(128)]
         public required string NewPassword { get; set; }
     }
 }

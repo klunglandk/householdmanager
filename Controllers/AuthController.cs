@@ -1,9 +1,10 @@
-using HouseholdManager.Services;
-using Microsoft.AspNetCore.Mvc;
-using HouseholdManager.Models;
-using Microsoft.AspNetCore.Identity;
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Dtos;
+using HouseholdManager.Models;
+using HouseholdManager.Services;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
 namespace HouseholdManager.Controllers
@@ -63,6 +64,15 @@ namespace HouseholdManager.Controllers
         {
             await _refreshTokenService.RevokeAsync(model.RefreshToken);
             return NoContent();
+        }
+
+        [HttpGet("me")]
+        public async Task<IActionResult> Me()
+        {
+            if (await _userManager.GetUserAsync(User) is not { } user) return Unauthorized();
+
+            var role = (await _userManager.GetRolesAsync(user)).FirstOrDefault() ?? string.Empty;
+            return Ok(UserDto.Map(user, role));
         }
 
         [HttpPost("change-password")]

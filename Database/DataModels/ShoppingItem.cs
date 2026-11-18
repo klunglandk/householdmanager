@@ -15,6 +15,5 @@ namespace HouseholdManager.Database.DataModels
         public DateTimeOffset? BoughtDate { get; set; }
 
         public bool IsBought => BoughtDate != null;
-
     }
 }

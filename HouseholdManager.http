@@ -2,7 +2,7 @@
 @adminUserName = {{$dotenv ADMIN_USER_NAME}}
 @adminPassword = {{$dotenv ADMIN_PASSWORD}}
 @childUserName = Child
-@childPassword = Child12345!
+@childPassword = Child12345678!
 @token = {{login.response.body.$.token}}
 @childToken = {{childLogin.response.body.$.token}}
 @childId = {{createChild.response.body.$.id}}
@@ -1280,6 +1280,89 @@ Content-Type: application/json
 {
   "refreshToken": "{{refreshTokenValue}}"
 }
+
+# Users
+### Lists the users of the household with role and isActive
+
+GET {{baseUrl}}/api/Users
+Authorization: Bearer {{token}}
+
+### Gets the child
+
+GET {{baseUrl}}/api/Users/{{childId}}
+Authorization: Bearer {{token}}
+
+### A user id that does not exist, should return 404
+
+GET {{baseUrl}}/api/Users/does-not-exist
+Authorization: Bearer {{token}}
+
+### Who am I, as the admin
+
+GET {{baseUrl}}/api/Auth/me
+Authorization: Bearer {{token}}
+
+### Who am I, as the child
+
+GET {{baseUrl}}/api/Auth/me
+Authorization: Bearer {{childToken}}
+
+### Deactivates the child, isActive becomes false and the child can no longer log in (should return 429)
+
+POST {{baseUrl}}/api/Users/{{childId}}/deactivate
+Authorization: Bearer {{token}}
+
+###
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "{{childPassword}}"
+}
+
+### Activates the child again
+
+POST {{baseUrl}}/api/Users/{{childId}}/activate
+Authorization: Bearer {{token}}
+
+### Creates a throwaway user that is deleted below
+# @name throwaway
+POST {{baseUrl}}/api/Users
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "userName": "Throwaway",
+  "password": "Throwaway12345!",
+  "role": "child"
+}
+
+### Deletes the throwaway user, should return 204
+
+DELETE {{baseUrl}}/api/Users/{{throwaway.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### The throwaway user is gone, should return 404
+
+GET {{baseUrl}}/api/Users/{{throwaway.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### The admin cannot delete itself, should return 400 (the admin id comes from /me)
+# @name me
+GET {{baseUrl}}/api/Auth/me
+Authorization: Bearer {{token}}
+
+###
+
+DELETE {{baseUrl}}/api/Users/{{me.response.body.$.id}}
+Authorization: Bearer {{token}}
+
+### The child cannot list users, should return 403
+
+GET {{baseUrl}}/api/Users
+Authorization: Bearer {{childToken}}
 
 # The child
 ### The child sees only its own chores

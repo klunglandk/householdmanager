@@ -1,3 +1,5 @@
+using System.Text;
+using System.Threading.RateLimiting;
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
@@ -7,8 +9,6 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
-using System.Threading.RateLimiting;
 
 namespace HouseholdManager
 {
@@ -49,6 +49,7 @@ namespace HouseholdManager
 
             builder.Services.AddIdentityCore<User>(options =>
                 {
+                    options.Password.RequiredLength = 12;
                     options.Lockout.AllowedForNewUsers = true;
                     options.Lockout.MaxFailedAccessAttempts = 5;
                     options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
@@ -67,7 +68,9 @@ namespace HouseholdManager
                         ValidateIssuerSigningKey = true,
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
                         ValidIssuer = jwtOptions.Issuer,
-                        ValidAudience = jwtOptions.Audience
+                        ValidAudience = jwtOptions.Audience,
+                        ValidAlgorithms = [SecurityAlgorithms.HmacSha256],
+                        ClockSkew = TimeSpan.FromSeconds(30)
                     };
                 });
 

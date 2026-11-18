@@ -13,6 +13,5 @@ namespace HouseholdManager.Database.DataModels
         public List<Ingredient> Ingredients { get; set; } = [];
 
         public List<ShoppingItem> ShoppingItems { get; set; } = [];
-
     }
 }

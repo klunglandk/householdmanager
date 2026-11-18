@@ -1,5 +1,6 @@
 using HouseholdManager.Dtos;
 using HouseholdManager.Infrastructure;
+using HouseholdManager.Models;
 using HouseholdManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

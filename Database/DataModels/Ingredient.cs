@@ -15,6 +15,5 @@ namespace HouseholdManager.Database.DataModels
         public decimal Amount { get; set; }
 
         public MeasurementUnit Unit { get; set; }
-
     }
 }

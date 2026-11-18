@@ -1,9 +1,11 @@
 using HouseholdManager.Database.DataModels;
+using HouseholdManager.Dtos;
 using HouseholdManager.Models;
 using HouseholdManager.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace HouseholdManager.Controllers
 {
@@ -19,6 +21,32 @@ namespace HouseholdManager.Controllers
         {
             _userManager = userManager;
             _refreshTokenService = refreshTokenService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            if (await _userManager.GetUserAsync(User) is not { } admin) return Unauthorized();
+
+            var users = await _userManager.Users
+                .Where(user => user.HouseholdId == admin.HouseholdId)
+                .OrderBy(user => user.UserName)
+                .ToListAsync();
+
+            var result = new List<UserDto>();
+            foreach (var user in users)
+            {
+                result.Add(UserDto.Map(user, await GetRoleAsync(user)));
+            }
+
+            return Ok(result);
+        }
+
+        [HttpGet("{userId}")]
+        public async Task<IActionResult> Get(string userId)
+        {
+            if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
+            return Ok(UserDto.Map(user, await GetRoleAsync(user)));
         }
 
         [HttpPost]
@@ -49,14 +77,13 @@ namespace HouseholdManager.Controllers
                 return BadRequest(roleResult.Errors.Select(error => error.Description));
             }
 
-            return Ok(new { newUser.Id, newUser.UserName, model.Role });
+            return Ok(UserDto.Map(newUser, model.Role));
         }
 
         [HttpPost("{userId}/reset-password")]
         public async Task<IActionResult> ResetPassword(string userId, [FromBody] ResetPasswordModel model)
         {
-            if (await _userManager.GetUserAsync(User) is not { } admin) return Unauthorized();
-            if (await _userManager.FindByIdAsync(userId) is not { } user || user.HouseholdId != admin.HouseholdId) return NotFound();
+            if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
 
             var removeResult = await _userManager.RemovePasswordAsync(user);
             if (!removeResult.Succeeded)
@@ -72,6 +99,71 @@ namespace HouseholdManager.Controllers
 
             await _refreshTokenService.RevokeAllAsync(user.Id);
             return NoContent();
+        }
+
+        [HttpPost("{userId}/deactivate")]
+        public async Task<IActionResult> Deactivate(string userId)
+        {
+            if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
+            if (IsCurrentUser(user)) return BadRequest("You cannot deactivate yourself.");
+
+            var result = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors.Select(error => error.Description));
+            }
+
+            await _refreshTokenService.RevokeAllAsync(user.Id);
+            return NoContent();
+        }
+
+        [HttpPost("{userId}/activate")]
+        public async Task<IActionResult> Activate(string userId)
+        {
+            if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
+
+            var result = await _userManager.SetLockoutEndDateAsync(user, null);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors.Select(error => error.Description));
+            }
+
+            await _userManager.ResetAccessFailedCountAsync(user);
+            return NoContent();
+        }
+
+        [HttpDelete("{userId}")]
+        public async Task<IActionResult> Delete(string userId)
+        {
+            if (await FindHouseholdUserAsync(userId, includeChores: true) is not { } user) return NotFound();
+            if (IsCurrentUser(user)) return BadRequest("You cannot delete yourself.");
+
+            var result = await _userManager.DeleteAsync(user);
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors.Select(error => error.Description));
+            }
+
+            return NoContent();
+        }
+
+        private async Task<User?> FindHouseholdUserAsync(string userId, bool includeChores = false)
+        {
+            if (await _userManager.GetUserAsync(User) is not { } admin) return null;
+
+            var query = _userManager.Users.Where(user => user.Id == userId && user.HouseholdId == admin.HouseholdId);
+            if (includeChores) query = query.Include(user => user.Chores);
+            return await query.FirstOrDefaultAsync();
+        }
+
+        private bool IsCurrentUser(User user)
+        {
+            return user.Id == _userManager.GetUserId(User);
+        }
+
+        private async Task<string> GetRoleAsync(User user)
+        {
+            return (await _userManager.GetRolesAsync(user)).FirstOrDefault() ?? string.Empty;
         }
     }
 }

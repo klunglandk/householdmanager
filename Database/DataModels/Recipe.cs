@@ -17,6 +17,5 @@ namespace HouseholdManager.Database.DataModels
         public Household Household { get; set; } = default!;
 
         public List<Ingredient> Ingredients { get; set; } = [];
-
     }
 }

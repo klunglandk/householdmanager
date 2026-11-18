@@ -4,10 +4,10 @@ namespace HouseholdManager.Models
 {
     public class ChangePasswordModel
     {
-        [Required]
+        [Required, MaxLength(128)]
         public required string CurrentPassword { get; set; }
 
-        [Required]
+        [Required, MaxLength(128)]
         public required string NewPassword { get; set; }
     }
 }

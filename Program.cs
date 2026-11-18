@@ -5,6 +5,7 @@ using HouseholdManager.Database.DataModels;
 using HouseholdManager.Infrastructure;
 using HouseholdManager.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -84,6 +85,14 @@ namespace HouseholdManager
                     }));
             });
 
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("10.0.0.0/8"));
+                options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("172.16.0.0/12"));
+                options.KnownIPNetworks.Add(System.Net.IPNetwork.Parse("192.168.0.0/16"));
+            });
+
             builder.Services.AddScoped<ICurrentUser, CurrentUser>();
             builder.Services.AddScoped<ITokenService, TokenService>();
             builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
@@ -105,6 +114,8 @@ namespace HouseholdManager
             builder.Services.AddHostedService<RecurrenceGenerationBackgroundService>();
 
             var app = builder.Build();
+
+            app.UseForwardedHeaders();
 
             app.UseExceptionHandler();
             app.UseStatusCodePages();

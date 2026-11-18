@@ -2,8 +2,6 @@
 
 # This stage is used when running from VS in fast mode (Default for Debug configuration)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
-# Folder for uploaded files, owned by the non-root app user. A new Docker volume
-# mounted here copies this ownership, so the app is allowed to write to it.
 RUN mkdir -p /data/uploads && chown $APP_UID /data/uploads
 USER $APP_UID
 WORKDIR /app

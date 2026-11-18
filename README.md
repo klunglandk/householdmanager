@@ -94,3 +94,4 @@ Prerequisites: the .NET 10 SDK.
 - [ ] Docker setup behind a reverse proxy with TLS
 
 ## License
+MIT, see the LICENSE file.

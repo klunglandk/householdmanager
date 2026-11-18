@@ -29,8 +29,12 @@ services:
       Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env}
       SeedAdmin__UserName: ${ADMIN_USER_NAME:?Set ADMIN_USER_NAME in .env}
       SeedAdmin__Password: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+      FileStorage__RootPath: /data/uploads
     ports:
       - "127.0.0.1:8080:8080"
+    volumes:
+      - uploads:/data/uploads
 
 volumes:
   dbdata:
+  uploads:

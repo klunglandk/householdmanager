@@ -12,6 +12,8 @@ namespace HouseholdManager.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Roles = "admin")]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     public class UsersController : ControllerBase
     {
         private readonly UserManager<User> _userManager;
@@ -24,7 +26,8 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<IEnumerable<UserDto>>> GetAll()
         {
             if (await _userManager.GetUserAsync(User) is not { } admin) return Unauthorized();
 
@@ -43,14 +46,17 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet("{userId}")]
-        public async Task<IActionResult> Get(string userId)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<UserDto>> Get(string userId)
         {
             if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
             return Ok(UserDto.Map(user, await GetRoleAsync(user)));
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateUserModel model)
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        public async Task<ActionResult<UserDto>> Create([FromBody] CreateUserModel model)
         {
             if (model.Role is not ("admin" or "child"))
             {
@@ -77,10 +83,12 @@ namespace HouseholdManager.Controllers
                 return BadRequest(roleResult.Errors.Select(error => error.Description));
             }
 
-            return Ok(UserDto.Map(newUser, model.Role));
+            return CreatedAtAction(nameof(Get), new { userId = newUser.Id }, UserDto.Map(newUser, model.Role));
         }
 
         [HttpPost("{userId}/reset-password")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> ResetPassword(string userId, [FromBody] ResetPasswordModel model)
         {
             if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
@@ -102,6 +110,8 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{userId}/deactivate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Deactivate(string userId)
         {
             if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
@@ -118,6 +128,8 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("{userId}/activate")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Activate(string userId)
         {
             if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
@@ -133,6 +145,8 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpDelete("{userId}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(string userId)
         {
             if (await FindHouseholdUserAsync(userId, includeChores: true) is not { } user) return NotFound();

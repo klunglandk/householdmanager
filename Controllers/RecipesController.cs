@@ -9,6 +9,7 @@ namespace HouseholdManager.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public class RecipesController : ControllerBase
     {
         public RecipesController(IRecipeService recipeService)
@@ -19,7 +20,9 @@ namespace HouseholdManager.Controllers
         private readonly IRecipeService _recipeService;
 
         [HttpGet("{recipeId}")]
-        public IActionResult Get(int recipeId)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<RecipeDto> Get(int recipeId)
         {
             if (_recipeService.GetRecipe(recipeId) is not { } recipe) return NotFound();
             var result = RecipeDto.Map(recipe);
@@ -27,7 +30,8 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<IEnumerable<RecipeDto>> GetAll()
         {
             var result = RecipeDto.MapCollection(_recipeService.GetAllRecipes());
             return Ok(result);
@@ -35,16 +39,21 @@ namespace HouseholdManager.Controllers
 
         [HttpPost]
         [Authorize(Roles = "admin")]
-        public IActionResult Create([FromBody] CreateRecipeModel model)
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public ActionResult<RecipeDto> Create([FromBody] CreateRecipeModel model)
         {
             var newRecipe = _recipeService.CreateRecipe(model);
             var result = RecipeDto.Map(newRecipe);
-            return Ok(result);
+            return CreatedAtAction(nameof(Get), new { recipeId = newRecipe.Id }, result);
         }
 
         [HttpPost("{recipeId}")]
         [Authorize(Roles = "admin")]
-        public IActionResult Update(int recipeId, [FromBody] UpdateRecipeModel model)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<RecipeDto> Update(int recipeId, [FromBody] UpdateRecipeModel model)
         {
             if (_recipeService.UpdateRecipe(recipeId, model) is not { } recipe) return NotFound();
             var result = RecipeDto.Map(recipe);
@@ -53,13 +62,18 @@ namespace HouseholdManager.Controllers
 
         [HttpDelete("{recipeId}")]
         [Authorize(Roles = "admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Delete(int recipeId)
         {
             if (!_recipeService.DeleteRecipe(recipeId)) return NotFound();
-            return Ok();
+            return NoContent();
         }
 
         [HttpGet("{recipeId}/image")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetImage(int recipeId)
         {
             if (_recipeService.GetRecipe(recipeId) is not { ImagePath: { } imagePath } recipe) return NotFound();
@@ -71,7 +85,10 @@ namespace HouseholdManager.Controllers
 
         [HttpPost("{recipeId}/image")]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> UploadImage(int recipeId, IFormFile file, CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<RecipeDto>> UploadImage(int recipeId, IFormFile file, CancellationToken cancellationToken)
         {
             await using var stream = file.OpenReadStream();
             if (await _recipeService.SetImageAsync(recipeId, stream, cancellationToken) is not { } recipe) return NotFound();
@@ -81,7 +98,10 @@ namespace HouseholdManager.Controllers
 
         [HttpDelete("{recipeId}/image")]
         [Authorize(Roles = "admin")]
-        public IActionResult DeleteImage(int recipeId)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<RecipeDto> DeleteImage(int recipeId)
         {
             if (_recipeService.RemoveImage(recipeId) is not { } recipe) return NotFound();
             var result = RecipeDto.Map(recipe);

@@ -9,6 +9,7 @@ namespace HouseholdManager.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public class SchoolPlansController : ControllerBase
     {
         public SchoolPlansController(ISchoolPlanService schoolPlanService)
@@ -19,7 +20,9 @@ namespace HouseholdManager.Controllers
         private readonly ISchoolPlanService _schoolPlanService;
 
         [HttpGet("{schoolPlanId}")]
-        public IActionResult Get(int schoolPlanId)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public ActionResult<SchoolPlanDto> Get(int schoolPlanId)
         {
             if (_schoolPlanService.GetSchoolPlan(schoolPlanId) is not { } schoolPlan) return NotFound();
             var result = SchoolPlanDto.Map(schoolPlan);
@@ -27,13 +30,16 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll(DateOnly? weekDate)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public ActionResult<IEnumerable<SchoolPlanDto>> GetAll(DateOnly? weekDate)
         {
             var result = SchoolPlanDto.MapCollection(_schoolPlanService.GetAllSchoolPlans(weekDate));
             return Ok(result);
         }
 
         [HttpGet("{schoolPlanId}/file")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult GetFile(int schoolPlanId)
         {
             if (_schoolPlanService.GetSchoolPlan(schoolPlanId) is not { } schoolPlan) return NotFound();
@@ -45,20 +51,25 @@ namespace HouseholdManager.Controllers
 
         [HttpPost]
         [Authorize(Roles = "admin")]
-        public async Task<IActionResult> Create([FromForm] CreateSchoolPlanModel model, CancellationToken cancellationToken)
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        public async Task<ActionResult<SchoolPlanDto>> Create([FromForm] CreateSchoolPlanModel model, CancellationToken cancellationToken)
         {
             await using var stream = model.File.OpenReadStream();
             var newSchoolPlan = await _schoolPlanService.CreateSchoolPlanAsync(model.WeekDate, model.File.FileName, stream, cancellationToken);
             var result = SchoolPlanDto.Map(newSchoolPlan);
-            return Ok(result);
+            return CreatedAtAction(nameof(Get), new { schoolPlanId = newSchoolPlan.Id }, result);
         }
 
         [HttpDelete("{schoolPlanId}")]
         [Authorize(Roles = "admin")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public IActionResult Delete(int schoolPlanId)
         {
             if (!_schoolPlanService.DeleteSchoolPlan(schoolPlanId)) return NotFound();
-            return Ok();
+            return NoContent();
         }
     }
 }

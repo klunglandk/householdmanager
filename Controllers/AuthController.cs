@@ -11,6 +11,7 @@ namespace HouseholdManager.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     public class AuthController : ControllerBase
     {
         private readonly ITokenService _tokenService;
@@ -27,7 +28,9 @@ namespace HouseholdManager.Controllers
         [AllowAnonymous]
         [EnableRateLimiting("login")]
         [HttpPost("login")]
-        public async Task<IActionResult> Login([FromBody] LoginModel model)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+        public async Task<ActionResult<AuthTokensDto>> Login([FromBody] LoginModel model)
         {
             if (await _userManager.FindByNameAsync(model.UserName) is not { } user) return Unauthorized();
             if (await _userManager.IsLockedOutAsync(user)) return StatusCode(StatusCodes.Status429TooManyRequests);
@@ -42,24 +45,27 @@ namespace HouseholdManager.Controllers
             if (await CreateAccessTokenAsync(user) is not { } token) return Unauthorized();
 
             var refreshToken = await _refreshTokenService.CreateAsync(user.Id);
-            return Ok(new { Token = token, RefreshToken = refreshToken });
+            return Ok(new AuthTokensDto { Token = token, RefreshToken = refreshToken });
         }
 
         [AllowAnonymous]
         [EnableRateLimiting("login")]
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody] RefreshTokenModel model)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status429TooManyRequests)]
+        public async Task<ActionResult<AuthTokensDto>> Refresh([FromBody] RefreshTokenModel model)
         {
             if (await _refreshTokenService.RotateAsync(model.RefreshToken) is not { } rotated) return Unauthorized();
             if (await _userManager.FindByIdAsync(rotated.UserId) is not { } user) return Unauthorized();
             if (await _userManager.IsLockedOutAsync(user)) return Unauthorized();
             if (await CreateAccessTokenAsync(user) is not { } token) return Unauthorized();
 
-            return Ok(new { Token = token, RefreshToken = rotated.RawToken });
+            return Ok(new AuthTokensDto { Token = token, RefreshToken = rotated.RawToken });
         }
 
         [AllowAnonymous]
         [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Logout([FromBody] RefreshTokenModel model)
         {
             await _refreshTokenService.RevokeAsync(model.RefreshToken);
@@ -67,7 +73,8 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpGet("me")]
-        public async Task<IActionResult> Me()
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<UserDto>> Me()
         {
             if (await _userManager.GetUserAsync(User) is not { } user) return Unauthorized();
 
@@ -76,7 +83,8 @@ namespace HouseholdManager.Controllers
         }
 
         [HttpPost("change-password")]
-        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordModel model)
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<ActionResult<AuthTokensDto>> ChangePassword([FromBody] ChangePasswordModel model)
         {
             if (await _userManager.GetUserAsync(User) is not { } user) return Unauthorized();
 
@@ -90,7 +98,7 @@ namespace HouseholdManager.Controllers
 
             if (await CreateAccessTokenAsync(user) is not { } token) return Unauthorized();
             var refreshToken = await _refreshTokenService.CreateAsync(user.Id);
-            return Ok(new { Token = token, RefreshToken = refreshToken });
+            return Ok(new AuthTokensDto { Token = token, RefreshToken = refreshToken });
         }
 
         private async Task<string?> CreateAccessTokenAsync(User user)

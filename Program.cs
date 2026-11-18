@@ -110,6 +110,7 @@ namespace HouseholdManager
             var app = builder.Build();
 
             app.UseExceptionHandler();
+            app.UseStatusCodePages();
 
             await DatabaseSeeder.SeedAsync(app.Services, app.Configuration);
 

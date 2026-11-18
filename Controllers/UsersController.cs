@@ -1,5 +1,6 @@
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Dtos;
+using HouseholdManager.Infrastructure;
 using HouseholdManager.Models;
 using HouseholdManager.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -60,7 +61,8 @@ namespace HouseholdManager.Controllers
         {
             if (model.Role is not ("admin" or "child"))
             {
-                return BadRequest("Role must be either 'admin' or 'child'.");
+                ModelState.AddModelError(nameof(model.Role), "Role must be either 'admin' or 'child'.");
+                return ValidationProblem(ModelState);
             }
 
             if (await _userManager.GetUserAsync(User) is not { } admin)
@@ -73,14 +75,14 @@ namespace HouseholdManager.Controllers
             var createResult = await _userManager.CreateAsync(newUser, model.Password);
             if (!createResult.Succeeded)
             {
-                return BadRequest(createResult.Errors.Select(error => error.Description));
+                return this.IdentityProblem(createResult);
             }
 
             var roleResult = await _userManager.AddToRoleAsync(newUser, model.Role);
             if (!roleResult.Succeeded)
             {
                 await _userManager.DeleteAsync(newUser);
-                return BadRequest(roleResult.Errors.Select(error => error.Description));
+                return this.IdentityProblem(roleResult);
             }
 
             return CreatedAtAction(nameof(Get), new { userId = newUser.Id }, UserDto.Map(newUser, model.Role));
@@ -96,13 +98,13 @@ namespace HouseholdManager.Controllers
             var removeResult = await _userManager.RemovePasswordAsync(user);
             if (!removeResult.Succeeded)
             {
-                return BadRequest(removeResult.Errors.Select(error => error.Description));
+                return this.IdentityProblem(removeResult);
             }
 
             var addResult = await _userManager.AddPasswordAsync(user, model.NewPassword);
             if (!addResult.Succeeded)
             {
-                return BadRequest(addResult.Errors.Select(error => error.Description));
+                return this.IdentityProblem(addResult);
             }
 
             await _refreshTokenService.RevokeAllAsync(user.Id);
@@ -115,12 +117,12 @@ namespace HouseholdManager.Controllers
         public async Task<IActionResult> Deactivate(string userId)
         {
             if (await FindHouseholdUserAsync(userId) is not { } user) return NotFound();
-            if (IsCurrentUser(user)) return BadRequest("You cannot deactivate yourself.");
+            if (IsCurrentUser(user)) return this.BadRequestProblem("You cannot deactivate yourself.");
 
             var result = await _userManager.SetLockoutEndDateAsync(user, DateTimeOffset.MaxValue);
             if (!result.Succeeded)
             {
-                return BadRequest(result.Errors.Select(error => error.Description));
+                return this.IdentityProblem(result);
             }
 
             await _refreshTokenService.RevokeAllAsync(user.Id);
@@ -137,7 +139,7 @@ namespace HouseholdManager.Controllers
             var result = await _userManager.SetLockoutEndDateAsync(user, null);
             if (!result.Succeeded)
             {
-                return BadRequest(result.Errors.Select(error => error.Description));
+                return this.IdentityProblem(result);
             }
 
             await _userManager.ResetAccessFailedCountAsync(user);
@@ -150,12 +152,12 @@ namespace HouseholdManager.Controllers
         public async Task<IActionResult> Delete(string userId)
         {
             if (await FindHouseholdUserAsync(userId, includeChores: true) is not { } user) return NotFound();
-            if (IsCurrentUser(user)) return BadRequest("You cannot delete yourself.");
+            if (IsCurrentUser(user)) return this.BadRequestProblem("You cannot delete yourself.");
 
             var result = await _userManager.DeleteAsync(user);
             if (!result.Succeeded)
             {
-                return BadRequest(result.Errors.Select(error => error.Description));
+                return this.IdentityProblem(result);
             }
 
             return NoContent();

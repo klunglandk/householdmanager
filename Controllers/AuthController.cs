@@ -1,5 +1,6 @@
 using HouseholdManager.Database.DataModels;
 using HouseholdManager.Dtos;
+using HouseholdManager.Infrastructure;
 using HouseholdManager.Models;
 using HouseholdManager.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -91,7 +92,7 @@ namespace HouseholdManager.Controllers
             var result = await _userManager.ChangePasswordAsync(user, model.CurrentPassword, model.NewPassword);
             if (!result.Succeeded)
             {
-                return BadRequest(result.Errors.Select(error => error.Description));
+                return this.IdentityProblem(result);
             }
 
             await _refreshTokenService.RevokeAllAsync(user.Id);

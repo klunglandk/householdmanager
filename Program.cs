@@ -24,6 +24,7 @@ namespace HouseholdManager
             });
             builder.Services.AddProblemDetails();
             builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+            builder.Services.AddExceptionHandler<ConcurrencyExceptionHandler>();
             builder.Services.AddOpenApi();
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddSingleton(TimeProvider.System);

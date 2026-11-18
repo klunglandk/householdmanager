@@ -9,6 +9,7 @@ namespace HouseholdManager.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status409Conflict)]
     public class ShoppingItemsController : ControllerBase
     {
         public ShoppingItemsController(IShoppingItemService shoppingItemService)

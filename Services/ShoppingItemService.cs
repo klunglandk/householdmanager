@@ -16,6 +16,9 @@ namespace HouseholdManager.Services
             _currentUser = currentUser;
         }
 
+        private const int MaxSaveAttempts = 3;
+        private const int ShoppingListLockNamespace = 1;
+
         private readonly HouseholdContext _context;
         private readonly IProductService _productService;
         private readonly IRecipeService _recipeService;
@@ -39,42 +42,45 @@ namespace HouseholdManager.Services
 
         public ShoppingItem? CreateShoppingItem(CreateShoppingItemModel model)
         {
-            if (_productService.GetProduct(model.ProductId) is not { } product) return null;
+            return MergeExclusively<ShoppingItem?>(() =>
+            {
+                if (_productService.GetProduct(model.ProductId) is not { } product) return null;
 
-            var unbought = GetUnboughtItems([product.Id]);
-            var result = AddOrMerge(unbought, product, model.Amount, model.Unit);
-            _context.SaveChanges();
-            return result;
+                var unbought = GetUnboughtItems([product.Id]);
+                return AddOrMerge(unbought, product, model.Amount, model.Unit);
+            });
         }
 
         public List<ShoppingItem>? AddFromRecipe(int recipeId, AddRecipeToShoppingListModel model)
         {
-            if (_recipeService.GetRecipe(recipeId) is not { } recipe) return null;
-
-            var ingredients = recipe.Ingredients;
-            if (model.IngredientIds is { Count: > 0 } ingredientIds)
+            return MergeExclusively<List<ShoppingItem>?>(() =>
             {
-                ingredients = recipe.Ingredients.Where(ingredient => ingredientIds.Contains(ingredient.Id)).ToList();
-                if (ingredients.Count != ingredientIds.Distinct().Count()) return null;
-            }
+                if (_recipeService.GetRecipe(recipeId) is not { } recipe) return null;
 
-            var scale = 1m;
-            if (model.Servings is { } wantedServings && recipe.Servings is { } recipeServings && recipeServings > 0)
-            {
-                scale = (decimal)wantedServings / recipeServings;
-            }
+                var ingredients = recipe.Ingredients;
+                if (model.IngredientIds is { Count: > 0 } ingredientIds)
+                {
+                    ingredients = recipe.Ingredients.Where(ingredient => ingredientIds.Contains(ingredient.Id)).ToList();
+                    if (ingredients.Count != ingredientIds.Distinct().Count()) return null;
+                }
 
-            var unbought = GetUnboughtItems(ingredients.Select(ingredient => ingredient.ProductId).Distinct().ToList());
+                var scale = 1m;
+                if (model.Servings is { } wantedServings && recipe.Servings is { } recipeServings && recipeServings > 0)
+                {
+                    scale = (decimal)wantedServings / recipeServings;
+                }
 
-            var result = new List<ShoppingItem>();
-            foreach (var ingredient in ingredients)
-            {
-                var item = AddOrMerge(unbought, ingredient.Product, ingredient.Amount * scale, ingredient.Unit);
-                if (!result.Contains(item)) result.Add(item);
-            }
+                var unbought = GetUnboughtItems(ingredients.Select(ingredient => ingredient.ProductId).Distinct().ToList());
 
-            _context.SaveChanges();
-            return result;
+                var result = new List<ShoppingItem>();
+                foreach (var ingredient in ingredients)
+                {
+                    var item = AddOrMerge(unbought, ingredient.Product, ingredient.Amount * scale, ingredient.Unit);
+                    if (!result.Contains(item)) result.Add(item);
+                }
+
+                return result;
+            });
         }
 
         public ShoppingItem? UpdateShoppingItem(int shoppingItemId, UpdateShoppingItemModel model)
@@ -124,6 +130,26 @@ namespace HouseholdManager.Services
             _context.ShoppingItems.RemoveRange(boughtItems);
             _context.SaveChanges();
             return boughtItems.Count;
+        }
+
+        private T MergeExclusively<T>(Func<T> operation)
+        {
+            for (var attempt = 1; ; attempt++)
+            {
+                using var transaction = _context.Database.BeginTransaction();
+                try
+                {
+                    _context.Database.ExecuteSqlInterpolated($"select pg_advisory_xact_lock({ShoppingListLockNamespace}, {_currentUser.HouseholdId})");
+                    var result = operation();
+                    _context.SaveChanges();
+                    transaction.Commit();
+                    return result;
+                }
+                catch (DbUpdateConcurrencyException) when (attempt < MaxSaveAttempts)
+                {
+                    _context.ChangeTracker.Clear();
+                }
+            }
         }
 
         private List<ShoppingItem> GetUnboughtItems(List<int> productIds)

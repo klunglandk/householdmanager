@@ -106,6 +106,7 @@ namespace HouseholdManager.Database
             {
                 e.HasKey(p => p.Id);
                 e.Property(p => p.Id).ValueGeneratedOnAdd();
+                e.Property(p => p.Version).IsRowVersion();
                 e.HasOne(p => p.Product).WithMany(p => p.ShoppingItems).HasForeignKey(p => p.ProductId);
             });
 

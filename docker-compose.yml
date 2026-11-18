@@ -2,14 +2,35 @@ services:
   db:
     image: postgres:17
     container_name: household-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: household
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: household
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U household -d household"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: household-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=household;Username=household;Password=${POSTGRES_PASSWORD}"
+      Jwt__Key: ${JWT_KEY:?Set JWT_KEY in .env}
+      SeedAdmin__UserName: ${ADMIN_USER_NAME:?Set ADMIN_USER_NAME in .env}
+      SeedAdmin__Password: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD in .env}
+    ports:
+      - "127.0.0.1:8080:8080"
 
 volumes:
   dbdata:

@@ -1,0 +1,15 @@
+services:
+  db:
+    image: postgres:17
+    container_name: household-db
+    environment:
+      POSTGRES_USER: household
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: household
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+
+volumes:
+  dbdata:

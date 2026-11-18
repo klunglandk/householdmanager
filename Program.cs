@@ -30,13 +30,7 @@ namespace HouseholdManager
 
             builder.Services.AddDbContext<HouseholdContext>(options =>
             {
-                options.UseSeeding((context, _) =>
-                {
-                    context.Set<Household>().Add(new Household { Name = "Test household" });
-                    context.SaveChanges();
-                });
-
-                options.UseInMemoryDatabase("household");
+                options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
             });
 
             builder.Services.AddOptions<JwtOptions>()

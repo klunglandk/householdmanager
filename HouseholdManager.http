@@ -8,9 +8,9 @@
 @childId = {{createChild.response.body.$.id}}
 
 # The admin login is read from the git-ignored file .env (copy .env.example to .env and fill it in). Never write the real values in this file.
-# childUserName and childPassword are throwaway test values for the in-memory database.
-# Run top to bottom against a freshly started app (the in-memory database is reset on every start).
-# The seeded data is household 1 and the admin user. Ids in the comments assume a fresh start.
+# childUserName and childPassword are throwaway test values for the development database.
+# Run top to bottom against an empty database. To start over: docker compose down -v, docker compose up -d, then start the app.
+# The seeded data is household 1 and the admin user. Ids in the comments assume an empty database.
 # Dates assume that today is 2026-11-10 (a Tuesday). Adjust the dates if you run it on another day.
 # Creating something returns 201 with a Location header, deleting returns 204. Adding to the shopping list returns 200 because it can merge into an existing item.
 # Enums are numbers. FrequencyType: Daily 0, Weekly 1, Monthly 2, Yearly 3.
@@ -848,7 +848,7 @@ Content-Type: application/json
 }
 
 ### Creates an extra instance for chore 1
-
+# @name extraInstance
 POST {{baseUrl}}/api/ChoreInstances
 Authorization: Bearer {{token}}
 Content-Type: application/json
@@ -1009,7 +1009,7 @@ Authorization: Bearer {{token}}
 
 ###
 
-DELETE {{baseUrl}}/api/ChoreInstances/13
+DELETE {{baseUrl}}/api/ChoreInstances/{{extraInstance.response.body.$.id}}
 Authorization: Bearer {{token}}
 
 ### Chore 1 is gone, should return 404
@@ -1308,12 +1308,12 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/Auth/me
 Authorization: Bearer {{childToken}}
 
-### Deactivates the child, isActive becomes false and the child can no longer log in (should return 429)
+### Deactivates the child, isActive becomes false, should return 204
 
 POST {{baseUrl}}/api/Users/{{childId}}/deactivate
 Authorization: Bearer {{token}}
 
-###
+### The deactivated child can no longer log in, should return 429
 
 POST {{baseUrl}}/api/Auth/login
 Content-Type: application/json
@@ -1350,12 +1350,12 @@ Authorization: Bearer {{token}}
 GET {{baseUrl}}/api/Users/{{throwaway.response.body.$.id}}
 Authorization: Bearer {{token}}
 
-### The admin cannot delete itself, should return 400 (the admin id comes from /me)
+### Gets the admin id for the next request
 # @name me
 GET {{baseUrl}}/api/Auth/me
 Authorization: Bearer {{token}}
 
-###
+### The admin cannot delete itself, should return 400
 
 DELETE {{baseUrl}}/api/Users/{{me.response.body.$.id}}
 Authorization: Bearer {{token}}
@@ -1431,7 +1431,7 @@ DELETE {{baseUrl}}/api/Households/1
 Authorization: Bearer {{token}}
 
 # Lockout, run this last because it locks the child out for 15 minutes
-### Five wrong passwords lock the account, the sixth attempt should return 429 even with the correct password
+### Wrong password, attempt 1 of 5, should return 401
 
 POST {{baseUrl}}/api/Auth/login
 Content-Type: application/json
@@ -1439,4 +1439,54 @@ Content-Type: application/json
 {
   "userName": "{{childUserName}}",
   "password": "wrong"
+}
+
+### Wrong password, attempt 2 of 5, should return 401
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "wrong"
+}
+
+### Wrong password, attempt 3 of 5, should return 401
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "wrong"
+}
+
+### Wrong password, attempt 4 of 5, should return 401
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "wrong"
+}
+
+### Wrong password, attempt 5 of 5, should return 401
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "wrong"
+}
+
+### The account is now locked, even the correct password should return 429
+
+POST {{baseUrl}}/api/Auth/login
+Content-Type: application/json
+
+{
+  "userName": "{{childUserName}}",
+  "password": "{{childPassword}}"
 }

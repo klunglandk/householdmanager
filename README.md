@@ -4,8 +4,8 @@ A self-hosted household app for a small family: shared chores with recurrence,
 a shopping list, recipes and a weekly school plan. The backend is an
 ASP.NET Core Web API. A React/PWA frontend is planned.
 
-> Status: backend feature-complete for a first version, running on an
-> in-memory database. PostgreSQL support and a frontend are next.
+> Status: backend feature-complete for a first version, running on
+> PostgreSQL. A frontend and the production deployment are next.
 
 ## Features
 
@@ -22,10 +22,10 @@ ASP.NET Core Web API. A React/PWA frontend is planned.
 ## Tech stack
 
 - .NET 10, ASP.NET Core Web API
-- Entity Framework Core (in-memory for now, PostgreSQL planned)
+- Entity Framework Core with PostgreSQL and migrations
 - ASP.NET Core Identity with roles
 - JWT access tokens and rotating refresh tokens
-- Docker
+- Docker (the development database runs in a container)
 
 ## Architecture
 
@@ -54,7 +54,8 @@ household, so one household cannot read or change another one's data.
 
 ## Security
 
-- Passwords hashed by Identity, account lockout after repeated failures
+- Passwords hashed by Identity, at least 12 characters, account lockout
+  after repeated failures
 - Rate limiting on login and refresh
 - Refresh tokens are stored hashed, rotated on every use, and revoked on
   password change or when a used token appears again
@@ -64,31 +65,58 @@ household, so one household cannot read or change another one's data.
 
 ## Getting started
 
-Prerequisites: the .NET 10 SDK.
+Prerequisites: the .NET 10 SDK and Docker.
 
-1. Set the secrets (from the project folder):
+1. Copy `.env.example` to `.env` and fill it in: a password for the database
+   and the admin credentials. The file is git-ignored. Docker Compose reads
+   the database password from it, and the `.http` test file reads the admin
+   login.
+2. Start the database:
+
+   ```
+   docker compose up -d
+   ```
+
+3. Set the secrets (from the project folder). The connection string must use
+   the same password as in `.env`:
 
    ```
    dotnet user-secrets set "Jwt:Key" "<random string, at least 32 characters>"
    dotnet user-secrets set "SeedAdmin:UserName" "<admin user name>"
-   dotnet user-secrets set "SeedAdmin:Password" "<admin password>"
+   dotnet user-secrets set "SeedAdmin:Password" "<admin password, at least 12 characters>"
+   dotnet user-secrets set "ConnectionStrings:Default" "Host=localhost;Port=5432;Database=household;Username=household;Password=<database password>"
    ```
 
-2. Copy `.env.example` to `.env` and fill in the same admin credentials. The
-   `.env` file is only used by the `.http` test file and is git-ignored.
-3. Run the app:
+4. Run the app. On startup it applies the database migrations and creates a
+   household, the roles and the admin user if they do not exist:
 
    ```
    dotnet run
    ```
 
-4. Open `HouseholdManager.http` in VS Code (REST Client) and run the requests
+5. Open `HouseholdManager.http` in VS Code (REST Client) and run the requests
    from the top. It logs in, creates a child account and exercises most
-   endpoints.
+   endpoints. Run it against an empty database; to start over, use
+   `docker compose down -v` followed by `docker compose up -d`.
+
+## Database migrations
+
+Install the EF Core tool once, using the same version as the EF Core packages:
+
+```
+dotnet tool install --global dotnet-ef --version 10.0.12
+```
+
+After changing the data models, create a migration. It is applied the next
+time the app starts:
+
+```
+dotnet ef migrations add <MigrationName>
+```
 
 ## Roadmap
 
-- [ ] PostgreSQL with migrations
+- [x] PostgreSQL with migrations
 - [ ] Unit tests (recurrence and unit conversion)
 - [ ] React/PWA frontend
 - [ ] Docker setup behind a reverse proxy with TLS

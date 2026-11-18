@@ -1,6 +1,7 @@
 using HouseholdManager.Database;
 using HouseholdManager.Database.DataModels;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace HouseholdManager.Infrastructure
 {
@@ -13,10 +14,19 @@ namespace HouseholdManager.Infrastructure
             using var scope = services.CreateScope();
 
             var context = scope.ServiceProvider.GetRequiredService<HouseholdContext>();
-            context.Database.EnsureCreated();
+            await context.Database.MigrateAsync();
 
+            await EnsureHouseholdAsync(context);
             await EnsureRolesAsync(scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole>>());
             await EnsureAdminAsync(context, scope.ServiceProvider.GetRequiredService<UserManager<User>>(), configuration);
+        }
+
+        private static async Task EnsureHouseholdAsync(HouseholdContext context)
+        {
+            if (await context.Households.AnyAsync()) return;
+
+            context.Households.Add(new Household { Name = "Test household" });
+            await context.SaveChangesAsync();
         }
 
         private static async Task EnsureRolesAsync(RoleManager<IdentityRole> roleManager)
@@ -35,7 +45,7 @@ namespace HouseholdManager.Infrastructure
             if (adminUserName is null || adminPassword is null) return;
             if (await userManager.FindByNameAsync(adminUserName) is not null) return;
 
-            var household = context.Households.First();
+            var household = await context.Households.OrderBy(household => household.Id).FirstAsync();
             var admin = new User { UserName = adminUserName, HouseholdId = household.Id };
 
             var createResult = await userManager.CreateAsync(admin, adminPassword);

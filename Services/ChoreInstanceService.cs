@@ -63,6 +63,8 @@ namespace HouseholdManager.Services
 
         public ChoreInstance CreateChoreInstanceWithNewChore(CreateChoreInstanceWithNewChoreModel model)
         {
+            using var transaction = _context.Database.BeginTransaction();
+
             var choreModel = new CreateChoreModel
             {
                 Name = model.Name,
@@ -87,6 +89,7 @@ namespace HouseholdManager.Services
                 _context.SaveChanges();
             }
 
+            transaction.Commit();
             return savedInstance;
         }
 

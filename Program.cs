@@ -34,6 +34,8 @@ namespace HouseholdManager
                 options.UseNpgsql(builder.Configuration.GetConnectionString("Default"));
             });
 
+            builder.Services.AddHealthChecks().AddDbContextCheck<HouseholdContext>();
+
             builder.Services.AddOptions<JwtOptions>()
                 .Bind(builder.Configuration.GetSection(JwtOptions.SectionName))
                 .ValidateDataAnnotations()
@@ -119,6 +121,7 @@ namespace HouseholdManager
             app.UseAuthorization();
 
             app.MapControllers();
+            app.MapHealthChecks("/health").AllowAnonymous();
 
             await app.RunAsync();
         }
